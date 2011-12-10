@@ -1608,7 +1608,24 @@ pass in hints to indicate how the data should be displayed. Splunge ties into th
 other determines the view state. Each can be updated at any point. The graph's value node will never emit values, but its view state will as the user interacts with the graph.
 
 The goal of Splunge is to be able to graph more or less anything without much hinting about how that should be done. However, this is obviously something of a pipe dream. Splunge compromises a
-bit by giving the user ways to change the way data is displayed after the fact. These changes are represented as projections that reorder the data somehow.
+bit by giving the user ways to change the way data is displayed after the fact.
+
+caterwaul('js_all jquery')(function ($) {
+
+Presentation.
+Splunge will choose a graph based on the kind of data you're working with. There are several data types that it can display directly, listed below. It also has rules for converting one kind of
+graph into another. For example, every pie chart can be rendered as a simple bar chart. Every simple bar chart can be rendered as a simple line chart. Clustered bar charts can be rendered as
+multiple-series line charts. Splunge generally starts off with the most specific chart type and lets the user generalize.
+
+| [{X: number, <stuff>}, ...]                                   -> pie chart
+  [number, number, ...]                                         -> line chart
+  [[X, number], ...]                                            -> pie chart
+  [[X, n1, n2, ...], ...]                                       -> clustered bar chart
+  [[number, number], ...]                                       -> line chart
+  [[number, n1, n2, ...], ...]                                  -> multiple-series line chart
+  {k1: number, k2: number, ...}                                 -> pie chart
+
+  $.splunge(data) = null})(caterwaul);
 
 __
 meta::parent('/home/spencertipping/bin/caterwaul-extension.html', <<'__');
