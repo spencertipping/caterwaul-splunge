@@ -49,10 +49,10 @@ caterwaul('js_all jquery')(function ($) {
 // An independent variable generally has one or more of these characteristics:
 
 // | 1. It is a date.
-//   2. Its values are evenly spaced.
-//   3. It is qualitative, not quantitative.
+//   2. It is qualitative, not quantitative.
+//   3. Its values are evenly spaced.
 
-
+// The list above is ordered by priority; a date takes priority over everything else, qualitative is more important than even spacing, and evenly-spaced values are the weakest indicator.
 
   $.splunge(data) = null})(caterwaul);
 
