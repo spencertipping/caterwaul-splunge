@@ -29,30 +29,76 @@ caterwaul('js_all jquery')(function ($) {
 // [0.3, 1) or (-1, -0.3] and there are more than 30 data points, then Splunge sorts by the more continuous variable of the two and shows a line graph.
 
 // Substructure flattening.
-// Suppose you've got a series of objects like [{x: {y: z, t: [...]}, ...}, ...]. It isn't necessarily obvious what to do with the sub-objects, so Splunge tries to flatten them out. It does this
-// by inlining objects directly; so {x: {y: z}} becomes {'x y': z}. If it finds an array, it attempts to reduce it somehow. How this is done depends on the values that are being reduced.
+// Suppose you've got a series of objects like [{x: {y: z, t: [...]}, ...}, ...]. Dealing with sub-objects isn't difficult provided that their shape is consistent across samples. The same is true
+// of an array whose size is consistent. Things get interesting when it runs into an array whose size isn't constant. These arrays need to be reduced into objects.
 
-// If an array is the same size across all samples and contains fewer than five elements, then it is not reduced. Instead, it is treated as an object with fields named 'first', 'second', etc.
+// Arrays of numbers are reduced according to the algorithm specified in the view state's 'reductions' field. By default, 'total' is used. This just causes numbers to be summed. Others are:
 
-// An array of numbers is generally reduced by statistical reduction. This means that the array is transformed into an object containing the fields {n, total, minimum, maximum, low_quartile,
-// median, high_quartile, low_10, high_10, average, variance}. If the initial array is monotonically increasing across all samples, then Splunge assumes that it's a cumulative sum and subtracts
-// one entry from the next. So, for example, the array [1, 2, 4, 61, 100] would become [1, 1, 2, 57, 39] and would then be statistically reduced.
+// | 1. n: the number of elements
+//   2. minimum
+//   3. maximum
+//   4. average
+//   5. variance
+//   6. quartiles: produces an object of the form {low_quartile, median, high_quartile}
+
+// You can change the reduction to an arbitrary expression to have Caterwaul compile a custom reduction function. The expression will comprise the body and init-block of a left-fold; for example,
+// to implement averaging:
+
+// | '[0][x0 + x / xl]'
+
+// I originally intended to have Splunge do some kind of monotone ascension detection and guess that the data was cumulative rather than absolute. However, Caterwaul's futures give you ways of
+// doing things like this, so I'm migrating this concern for the moment.
 
 // The reduction behavior for an array of strings depends on characteristics of their distribution. If 50% of the strings have fewer than 20 unique values, then the strings are assumed to
 // represent categories the 50 most frequent are folded into an object of the form {string1: frequency1, string2: frequency2, ..., '': remaining_frequency}. Otherwise, the strings are discarded
 // and the collection reduces to undefined.
 
 // Objects are reduced by performing a combination of these two transformations. First, all of the objects are reduced to the minimal set of fields that are universally present. For example, [{x,
-// y, z}, {x, y}] is reduced to [{x, y}, {x, y}]. The objects are then bucketed according to their string properties. Numeric properties are reduced within each bucket.
+// y, z}, {x, y}] is reduced to [{x, y}, {x, y}]. The objects are then bucketed according to their string properties. Numeric properties are reduced within each bucket. The result is something
+// that looks like [{x: 'foo', y: n1}, {x: 'bar', y: n2}, ...]. The user can choose to collapse any field; this emits a propagation event on the view state node.
 
 // Identifying independent variables.
 // An independent variable generally has one or more of these characteristics:
 
 // | 1. It is a date.
 //   2. It is qualitative, not quantitative.
-//   3. Its values are evenly spaced.
+//   3. Its values are evenly spaced and contain no duplicates.
 
 // The list above is ordered by priority; a date takes priority over everything else, qualitative is more important than even spacing, and evenly-spaced values are the weakest indicator.
+
+// View state values.
+// When you first pass data into Splunge, it constructs an initial view state that shows you what it did with your data. For example, suppose you do this:
+
+// | s = caterwaul.splunge([1, 2, 3, 4, 5])
+//   s.val()                       // returns the data
+//   s.view_state().val()          // returns the view state
+
+// Splunge hasn't inferred anything about your data beyond that it's a numeric series and implicitly ordered by index. It doesn't know whether the data represents a cumulative series or is
+// independent; it will assume independence until you tell it otherwise. The view state will be something like this:
+
+// | {dependents: ['x'], independent: 'xi', mode: 'bar', subset: null, reductions: {}, labels: {x: '', y: ''}}
+
+// Here are some more interesting examples:
+
+// | data: [{x: 100, y: 10}, {x: 110, y: 18}, {x: 120, y: 14}, {x: 130, y: 29}]
+//   view: {dependents: ['x.y'], independent: 'x.x', mode: 'bar', subset: null, reductions: {}, labels: {x: '', y: ''}}
+
+// | data: [{x: 100, y: 10, z: 50}, {x: 110, y: 50, z: 19}, {x: 120, y: 40, z: 70}]
+//   view: {dependents: ['x.y', 'x.z'], independent: 'x.x', mode: 'bar', subset: null, reductions: {}, labels: {x: '', y: ''}}
+
+// | data: [[1, 2, 3, 10], [1, 4], [5, 2], [10, 20, 30]]  ->  [16, 5, 7, 60]
+//   view: {dependents: ['x'], independent: 'xi', mode: 'bar', subset: null, reductions: {'x': 'total'}, labels: {x: '', y: 'Total'}}
+
+// | data: [{category: 'bif', value: 10}, {category: 'baz', value: 20}, {category: 'bok', value: 16}, {category: 'fizzle', value: 11}]
+//   view: {dependents: ['x.value'], independent: 'x.category', mode: 'bar', subset: null, reductions: {}, labels: {x: 'Category', y: 'Value'}}
+
+// | data: [{category: 'bif', values: [10, 20]}, {category: 'baz', values: [4, 5, 7]}, {category: 'bok', values: []}, {category: 'fizzle', values: [10, 20]}]
+//     ->  [{category: 'bif', values: 30}, {category: 'baz', values: 16}, {category: 'bok', values: 0}, {category: 'fizzle', values: 30}]
+//   view: {dependents: ['x.values'], independent: 'x.category', mode: 'bar', subset: null, reductions: {'x.values': 'total'}, labels: {x: 'Category', y: 'Total values'}}
+
+// | data: [{xs: [{x: 1, k: 'A'}, {x: 8, k: 'B'}, {x: 4, k: 'A'}]}, {foo: 'bar', xs: [{x: 3, k: 'A'}, {x: 6, k: 'A'}]}]
+//     ->  [{xs: [{x: 5, k: 'A'}, {x: 8, k: 'B'}]}, {xs: [{x: 9, k: 'A'}]}]
+//   view: {dependents: ['x.xs.x'], independent: 'x.xs.k', mode: 'bar', subset: null, reductions: {'x.xs.x': 'total', 'x.xs.k': 'partition'}, labels: {x: 'xs k', y: 'xs x'}}
 
   $.splunge(data) = null})(caterwaul);
 
