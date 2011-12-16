@@ -10,6 +10,8 @@
 // bit by giving the user ways to change the way data is displayed after the fact.
 
 caterwaul('js_all jquery')(function ($) {
+  $.splunge(data) = chart_for(data),
+  where [
 
 // Presentation and inference heuristics.
 // Splunge will choose a graph based on the kind of data you're working with. There are several data types that it can display directly, listed below. It also has rules for converting one kind of
@@ -25,8 +27,38 @@ caterwaul('js_all jquery')(function ($) {
 // are fewer than 20 data points, it may render a bar graph; otherwise it will render a line graph. If there are multiple (but fewer than seven) independent variables, Splunge will render either
 // a clustered bar graph or a multiple-series line graph.
 
-// If the numeric fields in every object sum to within 0.1% of the same quantity, then Splunge renders a stacked bar or line graph. If the variance of any two numeric fields lies within the range
-// [0.3, 1) or (-1, -0.3] and there are more than 30 data points, then Splunge sorts by the more continuous variable of the two and shows a line graph.
+// Identifying independent variables.
+// An independent variable generally has one or more of these characteristics:
+
+// | 1. It is a date.
+//   2. It is qualitative, not quantitative.
+//   3. Its values are evenly spaced and contain no duplicates.
+//   4. At the very least, its values have no duplicates.
+
+// The list above is ordered by priority; a date takes priority over everything else, qualitative is more important than even spacing, and evenly-spaced values are the weakest indicator.
+
+    chart_generalization   = 'pie bar line'.qw,
+
+    homogeneous_shape(xs)  = most_general(+xs *shape -seq)
+                     -where [shape(x)         = x == null ? 'null' : x.constructor === Number || '#{+x}' === x ? 'number' : x.constructor === String ? 'string' :
+                                   x.constructor === Date ? 'date' : x.constructor === Array ? array_shape(x) : x.constructor === Object ? object_shape(x) : 'null',
+
+                             object_shape(o)  = o %v*shape -seq,
+                             array_shape(xs)  = xs *shape -seq,
+
+                             most_general(ss) = ss /more_general -seq
+                                        -where [
+                                                atom(s)               = s.constructor === String,
+                                                generalize_atom(a, b) = 
+                                                more_general(s, t) = 
+
+
+    independence_score(xs) = is_a_date(xs) ? 4 : is_quantitative(xs) ? 3 : xs /!no_duplicates && (xs /!evenly_spaced ? 2 : 1),
+                     -where [is_a_date(xs)       = xs[0].constructor === Date,
+                             is_quantitative(xs) = xs[0].constructor === Date || xs[0].constructor === Number,
+                             derivative(xs)      = xs *[xi > 0 ? +x - +xs[xi - 1] : 0] -seq,
+                             no_duplicates(xs)   = xs |![table['@#{x}'] -se [table['@#{x}'] = true]] |seq,
+                             evenly_spaced(xs)   = derivative(derivative(sorted)) |![x] |seq]],
 
 // Substructure flattening.
 // Suppose you've got a series of objects like [{x: {y: z, t: [...]}, ...}, ...]. Dealing with sub-objects isn't difficult provided that their shape is consistent across samples. The same is true
@@ -56,15 +88,6 @@ caterwaul('js_all jquery')(function ($) {
 // Objects are reduced by performing a combination of these two transformations. First, all of the objects are reduced to the minimal set of fields that are universally present. For example, [{x,
 // y, z}, {x, y}] is reduced to [{x, y}, {x, y}]. The objects are then bucketed according to their string properties. Numeric properties are reduced within each bucket. The result is something
 // that looks like [{x: 'foo', y: n1}, {x: 'bar', y: n2}, ...]. The user can choose to collapse any field; this emits a propagation event on the view state node.
-
-// Identifying independent variables.
-// An independent variable generally has one or more of these characteristics:
-
-// | 1. It is a date.
-//   2. It is qualitative, not quantitative.
-//   3. Its values are evenly spaced and contain no duplicates.
-
-// The list above is ordered by priority; a date takes priority over everything else, qualitative is more important than even spacing, and evenly-spaced values are the weakest indicator.
 
 // View state values.
 // When you first pass data into Splunge, it constructs an initial view state that shows you what it did with your data. For example, suppose you do this:
@@ -100,6 +123,6 @@ caterwaul('js_all jquery')(function ($) {
 //     ->  [{xs: [{x: 5, k: 'A'}, {x: 8, k: 'B'}]}, {xs: [{x: 9, k: 'A'}]}]
 //   view: {dependents: ['x.xs.x'], independent: 'x.xs.k', mode: 'bar', subset: null, reductions: {'x.xs.x': 'total', 'x.xs.k': 'partition'}, labels: {x: 'xs k', y: 'xs x'}}
 
-  $.splunge(data) = null})(caterwaul);
+})(caterwaul);
 
 // Generated by SDoc 
