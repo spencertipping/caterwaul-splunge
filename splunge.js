@@ -10,7 +10,7 @@
 // bit by giving the user ways to change the way data is displayed after the fact.
 
 caterwaul('js_all jquery')(function ($) {
-  $.splunge(data) = chart_for(data),
+  $.splunge(data) = chart_for(data), se [it /-$.merge/ statics],
   where [
 
 // Presentation and inference heuristics.
