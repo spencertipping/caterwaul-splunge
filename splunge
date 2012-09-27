@@ -242,6 +242,7 @@ meta::meta('type::waul', <<'__');
 meta::functor::editable 'waul', inherit => 1, extension => '.waul', default => 'edit';
 
 __
+meta::alias('e', 'edit sdoc::waul::splunge');
 meta::bootstrap('html', <<'__');
 <html>
   <head>
@@ -1755,18 +1756,55 @@ Splunge charting | Spencer Tipping
 Licensed under the terms of the MIT source code license
 
 Introduction.
-Splunge is a charting library that consists of three layers. The lowest level
-contains vector-space transformations that are used to turn stacked bar charts
-into circularly-tessellated rings. This layer also inverse-transforms mouse
-coordinates. (Not all transformations use triangles; rectangles can be
-transformed into arcs in certain situations.)
+Splunge is a charting library that consists of three layers. The lowest level contains vector-space transformations that are used to turn stacked bar charts into circularly-tessellated rings.
+This layer also inverse-transforms mouse coordinates. (Not all transformations use triangles; rectangles can be transformed into arcs in certain situations.)
 
-The next layer up manages the physics of graph display. This involves modeling
-all of the view transformations as objects with mass and velocity, and using
-gravitational fields to pull them into the right places.
+The next layer up manages the physics of graph display. This involves modeling all of the view transformations as objects with mass and velocity, and using gravitational fields to pull them
+into the right places. Above this is the data interpretation layer, which assigns objects to data elements and puts them into a rectangular vector space. This layer is responsible for slicing
+unstructured data into lists of stacked bar-trees.
 
-Above this is the data interpretation layer, which assigns objects to data
-elements and puts them into a rectangular vector space.
+caterwaul.module('splunge', ':all', function ($) {
+  $.splunge(data) = jquery in canvas.splunge -se- render(data, it),
+  se [it /-$.merge/ slice_methods],
+
+Interpretation layer.
+Bars come in hierarchies, where children appear to the right and siblings are stacked vertically. Independent hierarchies are placed left/right and are laid out according to bounding boxes.
+The data format looks like this per hierarchy:
+
+| [{label: 'foo', value: 5, children: [...]}, ...]
+
+  Rendering.
+  We need to figure out the bounding box of each sub-hierarchy so that we can assign angles to stacked bar heights (basically, back-transforming them into the unit interval).
+
+  where [width(h) = 1 + h.level /dcq [h.children ? h.children *width /Math.max /seq : 0],  height(h)        = h.dv -dcq- h *[x.value] /[x + x0] /seq,
+                                                                                           stack_heights(h) = h *![x.v0 = v, v += x.value] -seq -where [v = 0],
+
+  Slicing.
+  Quick ways to slice unstructured data into valid hierarchies.
+
+         slice_methods = {TODO: true},
+
+Physical model.
+We simulate a system with a few independent particles that are pulled according to some constraints (one of these constraints is the user). (TODO)
+
+Transformation layer.
+We transform points in two different ways here. First, we transform the graph rectangles into arcs by height. The idea here is that a vertically-stacked bar becomes a circle of arc segments.
+We also transform bounding boxes into circular regions. Second, we back-transform mouse coordinates into rectangular space. This is done so we can figure out which segment of data the user is
+interacting with.
+
+A circular transformation has the following fields, each of which is a continuous variable:
+
+| 1. x0: the current focal point for scaling.
+  2. dx: the current focal scale factor.
+  3. y0s: an array of numbers that specify vertical zoom offsets for various focal levels. (Intermediate focal values are interpolated)
+  4. dys: an array of numbers that specify vertical zoom amounts for various focal levels.
+
+Transformations are immutable and support linear combination. This is used to navigate smoothly through various levels of the tree. Some rules that govern the circular projection:
+
+| 1. Circles are drawn with no overlap, even if the current dy is smaller than the data limits. Excess area is clipped.
+  2. Horizontal projection is computed using the arctangent as the integral. We don't end up using the derivative for anything.
+
+  ]});  // vim: set tw=192 :
 
 __
 meta::template('comment', '\'\';     # A mechanism for line or block comments.');
