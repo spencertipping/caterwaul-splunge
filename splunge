@@ -1838,7 +1838,7 @@ unhovers, clicks, etc, on an individual data element.
   interpolate(t1, t2, x)       = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
                                                                           scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
 
-  inverse(t, p)                = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) - 0.5) * Math.PI) * t.dx + t.x0, y: (Math.atan2(p.y, p.x) / tau + 1) % 1 * t.dy + t.y0},
+  inverse(t, p)                = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) /-Math.min/ 1.0 - 0.5) * Math.PI) * t.dx + t.x0, y: (Math.atan2(p.y, p.x) / tau + 1) % 1 * t.dy + t.y0},
   transform(t, p)              = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
                                                                                                               angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
 

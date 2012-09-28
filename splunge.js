@@ -51,7 +51,7 @@ return xr} ) .call(this,xs) ) } ,interpolate=function(t1,t2,x) {;
 return add(scale(t1,1.0-x) ,scale(t2,x) ) } ,add=function(t1,t2) {;
 return{x0:t1.x0+t2.x0,dx:t1.dx+t2.dx,y0:t1.y0+t2.y0,dy:t1.dy+t2.dy} } ,scale=function(t,x) {;
 return{x0:t.x0*x,dx:t.dx*x,y0:t.y0*x,dy:t.dy*x} } ,inverse=function(t,p) {;
-return{x:Math.tan( (Math.sqrt(p.x*p.x+p.y*p.y) -0.5) *Math.PI) *t.dx+t.x0,y: (Math.atan2(p.y,p.x) /tau+1) %1*t.dy+t.y0} } ,transform=function(t,p) {;
+return{x:Math.tan( (Math.min(Math.sqrt(p.x*p.x+p.y*p.y) ,1.0) -0.5) *Math.PI) *t.dx+t.x0,y: (Math.atan2(p.y,p.x) /tau+1) %1*t.dy+t.y0} } ,transform=function(t,p) {;
 return(function() {var d=Math.atan( (p.x-t.x0) /t.dx) /Math.PI+0.5,angle=Math.min(Math.max( (p.y-t.y0) /t.dy*tau,0) ,tau) ;
 return{x:d*Math.cos(angle) ,y:d*Math.sin(angle) ,d:d,angle:angle} } ) .call(this) } ,point_hits=function(p,h) {;
 return(function(it) {return p.x>=it.x0&&p.y>=it.y0&&p.y<=it.y0+it.dy&&it} ) .call(this, (bbox(h) ) ) } ,point_hits_self=function(p,h) {;
