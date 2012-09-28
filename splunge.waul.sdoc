@@ -10,14 +10,17 @@ into the right places. Above this is the data interpretation layer, which assign
 unstructured data into lists of stacked bar-trees.
 
 caterwaul.module('splunge', ':all', function ($) {
-  $.splunge(data) = path, // jquery in canvas.splunge -se- render(data, it),
-//  se [it /-$.merge/ slice_methods],
+  $.splunge(data) = $.splunge.create(data),
+  $.splunge /-$.merge/ wcapture [
 
 Interpretation layer.
 Bars come in hierarchies, where children appear to the right and siblings are stacked vertically. Independent hierarchies are placed left/right and are laid out according to bounding boxes.
 The data format looks like this per hierarchy:
 
-| [{label: 'foo', value: 5, xs: [...]}, ...]
+| [{label: 'foo', y0: 0.5, dy: 0.25, xs: [...]}, ...]
+
+You can also offset elements horizontally, and modify their horizontal displacement, by setting their x0 and dx attributes. However, it's recommended that you keep these absent so that they
+are inferred to be their default values, 0 and 1 respectively.
 
   Rendering.
   We need to figure out the bounding box of each sub-hierarchy so that we can assign angles to stacked bar heights (basically, back-transforming them into the unit interval). The coordinates
@@ -28,14 +31,27 @@ The data format looks like this per hierarchy:
   the maximum depth of any descendant, the y0 will be the absolute Y-coordinate of this node (scaled within its parents), and the dy will be the absolute height of this node. Note that these
   bounding boxes are then transformed into sector arcs by the transformation layer.
 
-  where [tau     = 2 * Math.PI,
-         bbox(h) = b(h, 0, 0, 1) -where [b(h, x0, y0, dy) = h.bbox <ocq> h.xs *!c[b(c, x0 + 1, y, new_dy) -then [y += c.value * new_dy]] -seq -when- h.xs
-                                                                         -then- {x0: x0, dx: 1 + (h.xs ? h.xs /[0][x0 /-Math.max/ x.bbox.dx] /seq : 0), y0: y0, dy: dy * h.value}
-                                                                         -where [ymax   = h.xs ? h.xs /[0][x0 + x.value] -seq : 0,
-                                                                                 y      = 0,
-                                                                                 new_dy = dy / ymax]],
-         base(b) = {x: b.x0, y: b.y0},  mix(a, b)     = {x: a.x, y: b.y},
-         d(b)    = {x: b.dx, y: b.dy},  project(b, x) = {x: b.x0 + b.dx * x, y: b.y0 + b.dy * x},
+  tau     = 2 * Math.PI,
+  bbox(h) = b(h, 0, 0, 1) -where [b(h, x0, y0, dy) = h.bbox <ocq> h.xs *!c[b(c, new_x0, new_y0, new_dy)] -seq -when- h.xs
+                                                                  -then- {x0: x0,     dx: (h.dx || 1) + (h.xs ? h.xs /[0][x0 /-Math.max/ x.bbox.dx] /seq : 0),
+                                                                          y0: new_y0, dy: new_dy}
+                                                                  -where [new_x0 = x0 + (h.x0 || 0) + (h.dx || 1),
+                                                                          new_y0 = y0 + h.y0 * dy, new_dy = dy * h.dy]],
+  base(b) = {x: b.x0, y: b.y0},  mix(a, b)     = {x: a.x, y: b.y},
+  d(b)    = {x: b.dx, y: b.dy},  project(b, x) = {x: b.x0 + b.dx * x, y: b.y0 + b.dy * x},  self_bbox(h) = h.self_bbox -ocq- bbox(h) /pairs /object /seq /se [it.dx = 1],
+
+  Data preparation.
+  Splunge is more general than is useful for most data. These methods take common cases and produce items in general form. Some common cases are:
+
+  | 1. Normalized hierarchical data. The children of each element should be stacked and sum to a height of h (usually 1).
+    2. Discrete tree data. Sizes are normalized, and relative sizes are proportional to the number of descendants.
+
+  These methods are nondestructive in the sense that they will not modify existing values of the data; however, they will create new attributes, possibly overwriting stuff that was there
+  previously.
+
+  normalized(xs, h, h -ocq- 1) = xs *[x /-$.merge/ {y0: y, dy: x.dy / ymax} -se [y += it.dy]] -seq -where [y = 0, ymax = xs /[0][x0 + x.dy] /seq * h],
+  descendant_count(h)          = h.descendant_count -ocq- 1 + h.xs /[0][x0 + x /!descendant_count] /seq /when [h.xs],
+  discrete_tree(xs)            = normalized(xs *[x /-$.merge/ {dy: x /!descendant_count}] -seq),
 
 Transformation layer.
 We transform points in two different ways here. First, we transform the graph rectangles into arcs by height. The idea here is that a vertically-stacked bar becomes a circle of arc segments.
@@ -57,18 +73,19 @@ Transformations are immutable and support linear combination. This is used to na
 Interaction is also handled here. The only rule is that the view focuses on the object where the user clicks. We also emit jQuery events on the <canvas> element whenever the user hovers,
 unhovers, clicks, etc, on an individual data element.
 
-         interpolate(t1, t2, x) = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
-                                                                           scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
+  interpolate(t1, t2, x) = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
+                                                                    scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
 
-         inverse(t, p)          = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) - 0.5) * tau * t.dx + t.x0), y: Math.atan2(p.x, p.y) * t.dy + t.y0},
-         transform(t, p)        = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / tau + 0.5,
-                                                                                                               angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
-         point_hits_desc(p, h)  = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
-         point_hits_self(p, h)  = point_hits_desc(p, h) -re [it && p.x <= it.x0 + it.dy],
+  inverse(t, p)          = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) - 0.5) * Math.PI * t.dx + t.x0), y: Math.atan2(p.x, p.y) * t.dy + t.y0},
+  transform(t, p)        = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
+                                                                                                        angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
+  point_hits_desc(p, h)  = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
+  point_hits_self(p, h)  = point_hits_desc(p, h) -re [it && p.x <= it.x0 + it.dx],
 
-         arc_path(h, t)(c)      = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
-                           -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!bbox /!base,             p2 = h /!bbox /-project/ 1,
-                                                                                      c1 = transform(t, p1),            c3 = transform(t, p2),
-                                                                                      c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+  arc_path(h, t)(c)      = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
+                    -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
+                                                                               c1 = transform(t, p1),            c3 = transform(t, p2),
+                                                                               c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
 
-         path(h, t)(c, f)       = arc_path(h, t)(c) -then- f(c, h) <then> h.xs *![path(x, t)(c, f)] -seq -when- h.xs]});
+  is_visible(h, t)       = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
+  paths(h, t)(f)         = f(arc_path(h, t), h) <then> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});

@@ -13,18 +13,35 @@
           <se> it.fillStyle /eq['white'] -then-
                it.fillRect(0, 0, 800, 400) -then-
                it.save() -then-
-               it.translate(120, 120) -then-
-               it.scale(100, 100) -then-
-               it.fillStyle /eq['rgba(0, 0, 0, 0.5)'] -then-
-               it.beginPath() -then-
-               caterwaul.splunge(data)(data, {x0: (e.pageX - 400) * -0.01, dx: 1, y0: 0, dy: e.pageY * 0.05})(it) -then-
-               it.fill() -then-
-               it.restore(),
-        where [data = {name: 'foo', value: 1, xs: [{name: 'bar', value: 3}, {name: 'bif', value: 4}]}],
-        given.e)}));
+               it.scale(200, 200) -then-
+               it.translate(1, 1) -then-
+               it.lineWidth /eq[0.005] -then-
+               caterwaul.splunge.paths(data, {x0: (ex - 400) * -0.03, dx: 1, y0: 0, dy: 100 / ey})(
+                                       given [p, h] in it.beginPath() -then-
+                                                       p(it) -then-
+                                                       it.fillStyle /eq[h.color] -then-
+                                                       it.strokeStyle /eq['white'] -then-
+                                                       it.fill() -then-
+                                                       it.stroke()) -then-
+               it.restore()
+               -where [ex = e.pageX - $('#splunge-test').position().left,
+                       ey = e.pageY - $('#splunge-test').position().top],
+        given.e),
+
+        $('#status').text('#{children} data elements'),
+        $('#data').text(data /!JSON.stringify),
+        where [random_children(n) = caterwaul.splunge.discrete_tree(n[n - Math.random() * 2] *[child(n * 0.5)] -seq),
+               children           = 0,
+               random_color()     = 'rgba(0, 20, 40, #{Math.random() * 0.5 + 0.2})',
+               child(n)           = ++children -then- {dy:    Math.random() / n,
+                                                       color: random_color(),
+                                                       xs:    random_children(n)},
+               data               = {name: 'root', y0: 0, dy: 1, xs: random_children(15)}]}));
   </script>
 </head>
 <body>
+  <div id='status'></div>
   <canvas id='splunge-test' width='800' height='400'></canvas>
+  <pre id='data'></pre>
 </body>
 </html>
