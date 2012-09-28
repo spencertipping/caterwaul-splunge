@@ -2,7 +2,7 @@ caterwaul.module( 'splunge' ,function($) {$.splunge=function(data) {;
 return $.splunge.create(data) } ,$.merge($.splunge, (function() {var tau=2*Math.PI,bbox=function(h) {;
 return(function() {var b=function(h,x0,y0,dy) {;
 return h.bbox?h.bbox
-:h.bbox= (function() {var self_x0=x0+ (h.x0||0) ,self_dx=h.dx||1,new_x0=self_x0+self_dx,new_y0=y0+h.y0*dy,new_dy=dy*h.dy;
+:h.bbox= (function() {var self_x0=x0+ (h.x0||0) ,self_dx=h.dx||1,new_x0=self_x0+self_dx,new_y0=y0+ (h.y0||0) *dy,new_dy=dy*h.dy;
 return(h.xs&& (function(cs) {var c,c0,ci,cl,cr;
 for(var ci=0,cl=cs.length;
 ci<cl;
