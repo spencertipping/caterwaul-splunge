@@ -95,6 +95,7 @@ unhovers, clicks, etc, on an individual data element.
                                                                                                                      c1 = transform(t, p1),            c3 = transform(t, p2),
                                                                                                                      c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
 
+      dt(t, p1, p2)                = tp1 /pairs *[[x[0], tp2[x[0]] - x[1]]] /object -seq -where [tp1 = transform(t, p1),
+                                                                                                 tp2 = transform(t, p2)],
       is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
-      transformed_width(box, t)    = transform(t, box /-project/ 1).d - transform(t, box /!base).d,
       paths(h, t)(f)               = f(arc_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});

@@ -60,8 +60,10 @@
                                          it.strokeStyle /eq['white'] -then-
                                          it.fill() -then-
                                          it.stroke() -then- true
-                                         -when [c.splunge.transformed_width(c.splunge.self_bbox(h), t) > 0.03]) -then-
-                                       it.restore()]}));
+                                         -when [delta.d > 0.01 && delta.angle > tau * 0.001]
+                                         -where [delta = dt(t, self_bbox(h) /!base, self_bbox(h) /-project/ 1)]) -then-
+                                       it.restore()],
+      using [caterwaul.splunge]}));
   </script>
 </head>
 <body>
