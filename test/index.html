@@ -60,7 +60,7 @@
                                          it.strokeStyle /eq['white'] -then-
                                          it.fill() -then-
                                          it.stroke() -then- true
-                                         -when [c.splunge.transformed_width(h, t) > 0.03]) -then-
+                                         -when [c.splunge.transformed_width(c.splunge.self_bbox(h), t) > 0.03]) -then-
                                        it.restore()]}));
   </script>
 </head>

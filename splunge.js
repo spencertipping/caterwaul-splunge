@@ -66,8 +66,8 @@ if(x1= (find_by_point(x,p) ) )return x1}return false} ) .call(this,h.xs) ) } ,ar
 return function(c) {;
 return(function() {var p1=base(self_bbox(h) ) ,p2=project(self_bbox(h) ,1) ,c1=transform(t,p1) ,c3=transform(t,p2) ,c2=transform(t,mix(p2,p1) ) ,c4=transform(t,mix(p1,p2) ) ;
 return( ( ( (c.moveTo(c1.x,c1.y) ,c.lineTo(c2.x,c2.y) ) ,c.arc(0,0,c2.d,c2.angle,c3.angle) ) ,c.lineTo(c4.x,c4.y) ) ,c.arc(0,0,c4.d,c4.angle,c1.angle,true) ) } ) .call(this) } } ,is_visible=function(h,t) {;
-return bbox(h) .y0+h.bbox.dy>t.y0&&h.bbox.y0<t.y0+t.dy} ,transformed_width=function(h,t) {;
-return transform(t,project(self_bbox(h) ,1) ) .d-transform(t,base(bbox(h) ) ) .d} ,paths=function(h,t) {;
+return bbox(h) .y0+h.bbox.dy>t.y0&&h.bbox.y0<t.y0+t.dy} ,transformed_width=function(box,t) {;
+return transform(t,project(box,1) ) .d-transform(t,base(box) ) .d} ,paths=function(h,t) {;
 return function(f) {;
 return f(arc_path(h,t) ,h,t) && (h.xs&& (function(xs) {var x,x0,xi,xl,xr;
 for(var xi=0,xl=xs.length;
