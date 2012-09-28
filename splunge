@@ -1835,22 +1835,26 @@ Transformations are immutable and support linear combination. This is used to na
 Interaction is also handled here. The only rule is that the view focuses on the object where the user clicks. We also emit jQuery events on the <canvas> element whenever the user hovers,
 unhovers, clicks, etc, on an individual data element.
 
-  interpolate(t1, t2, x) = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
-                                                                    scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
+  interpolate(t1, t2, x)       = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
+                                                                          scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
 
-  inverse(t, p)          = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) - 0.5) * Math.PI * t.dx + t.x0), y: Math.atan2(p.x, p.y) * t.dy + t.y0},
-  transform(t, p)        = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
-                                                                                                        angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
-  point_hits_desc(p, h)  = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
-  point_hits_self(p, h)  = point_hits_desc(p, h) -re [it && p.x <= it.x0 + it.dx],
+  inverse(t, p)                = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) - 0.5) * Math.PI) * t.dx + t.x0, y: (Math.atan2(p.y, p.x) / tau + 1) % 1 * t.dy + t.y0},
+  transform(t, p)              = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
+                                                                                                              angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
 
-  arc_path(h, t)(c)      = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
-                    -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
-                                                                               c1 = transform(t, p1),            c3 = transform(t, p2),
-                                                                               c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+  point_hits(p, h)             = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
+  point_hits_self(p, h)        = point_hits(p, h) -re [it && p.x <= it.x0 + (h.dx || 1)],
+  find_by_transformed(h, t, p) = find_by_point(h, inverse(t, p)),
+  find_by_point(h, p)          = point_hits(p, h) && (point_hits_self(p, h) ? h : h.xs && h.xs |[find_by_point(x, p)] |seq),
 
-  is_visible(h, t)       = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
-  paths(h, t)(f)         = f(arc_path(h, t), h) <then> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
+  arc_path(h, t)(c)            = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
+                                 -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
+                                                                                            c1 = transform(t, p1),            c3 = transform(t, p2),
+                                                                                            c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+
+  is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
+  transformed_width(h, t)      = transform(t, bbox(h) /-project/ 1).d - transform(t, bbox(h) /!base).d,
+  paths(h, t)(f)               = f(arc_path(h, t), h, t) <then> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
 
 __
 meta::template('comment', '\'\';     # A mechanism for line or block comments.');
