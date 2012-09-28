@@ -637,6 +637,14 @@ else    {pop @{$transient{path}}}
 
 __
 meta::function('reload', 'around_hook(\'reload\', sub {execute($_) for grep ! /^bootstrap::/, keys %data});');
+meta::function('render', <<'__');
+my ($options, @stuff) = separate_options(@_);
+
+file::write('splunge.waul.sdoc', retrieve('sdoc::waul::splunge'));
+file::write('splunge.md',        retrieve('markdown::waul::splunge'));
+sh('waul splunge.waul.sdoc') unless $$options{-W};
+
+__
 meta::function('rm', <<'__');
 around_hook('rm', @_, sub {
   exists $data{$_} or terminal::warning("$_ does not exist") for @_;
@@ -1764,8 +1772,8 @@ into the right places. Above this is the data interpretation layer, which assign
 unstructured data into lists of stacked bar-trees.
 
 caterwaul.module('splunge', ':all', function ($) {
-  $.splunge(data) = jquery in canvas.splunge -se- render(data, it),
-  se [it /-$.merge/ slice_methods],
+  $.splunge(data) = path, // jquery in canvas.splunge -se- render(data, it),
+//  se [it /-$.merge/ slice_methods],
 
 Interpretation layer.
 Bars come in hierarchies, where children appear to the right and siblings are stacked vertically. Independent hierarchies are placed left/right and are laid out according to bounding boxes.
@@ -1778,9 +1786,18 @@ The data format looks like this per hierarchy:
   we're interested in are x0, dx, y0, and dy. Every object is assumed to have the same width; this keeps siblings aligned across circular transformation. The data layout is chosen so that
   bounding boxes and transformations have identical semantics and representation.
 
-  where [bbox(h) = b(h, 0, 0, 1) -where [b(h, x0, y0, dy) = h.bbox -ocq- {x0: x0, dx: h.xs && h.xs.length ? 1 + h.xs *[b(x, x0, y0 + dy * h.value, dy * h.value / max).dx] /Math.max /seq : 1,
-                                                                          y0: y0, dy: dy * h.value} /where [max = h.xs && h.xs.length && h.xs[h.xs.length - 1].value]],
-         base(b) = {x: b.x0, y: b.y0},  d(b) = {x: b.dx, y: b.dy},  mix(a, b) = {x: a.x, y: b.y},
+  Bounding box computation involves adding a 'bbox' attribute to each data node. The bbox tracks the cumulative offset of that node; that is, the x0 will be linear in the depth, the dx will be
+  the maximum depth of any descendant, the y0 will be the absolute Y-coordinate of this node (scaled within its parents), and the dy will be the absolute height of this node. Note that these
+  bounding boxes are then transformed into sector arcs by the transformation layer.
+
+  where [tau     = 2 * Math.PI,
+         bbox(h) = b(h, 0, 0, 1) -where [b(h, x0, y0, dy) = h.bbox <ocq> h.xs *!c[b(c, x0 + 1, y, new_dy) -then [y += c.value * new_dy]] -seq -when- h.xs
+                                                                         -then- {x0: x0, dx: 1 + (h.xs ? h.xs /[0][x0 /-Math.max/ x.bbox.dx] /seq : 0), y0: y0, dy: dy * h.value}
+                                                                         -where [ymax   = h.xs ? h.xs /[0][x0 + x.value] -seq : 0,
+                                                                                 y      = 0,
+                                                                                 new_dy = dy / ymax]],
+         base(b) = {x: b.x0, y: b.y0},  mix(a, b)     = {x: a.x, y: b.y},
+         d(b)    = {x: b.dx, y: b.dy},  project(b, x) = {x: b.x0 + b.dx * x, y: b.y0 + b.dy * x},
 
 Transformation layer.
 We transform points in two different ways here. First, we transform the graph rectangles into arcs by height. The idea here is that a vertically-stacked bar becomes a circle of arc segments.
@@ -1799,17 +1816,24 @@ Transformations are immutable and support linear combination. This is used to na
 | 1. Circles are drawn with no overlap, even if the current dy is smaller than the data limits. Excess area is clipped.
   2. Horizontal projection is computed using the arctangent as the integral. We don't end up using the derivative for anything.
 
+Interaction is also handled here. The only rule is that the view focuses on the object where the user clicks. We also emit jQuery events on the <canvas> element whenever the user hovers,
+unhovers, clicks, etc, on an individual data element.
+
          interpolate(t1, t2, x) = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
                                                                            scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
 
-         inverse(t, p)          = {x: Math.tan(Math.sqrt(p.x * p.x + p.y * p.y) / t.dx + t.x0), y: Math.atan2(p.x, p.y) / t.dy + t.y0},
-         transform(t, p)        = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) * t.dx),
-                                                                                                               angle = (p.y - t.y0) * t.dy * Math.PI * 2.0],
-         arc_path(h, t)(c)      = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle, true) -then- c.lineTo(c4.x, c4.y)
-                           -then- c.arc(0, 0, c4.d, c4.angle, c1.angle) -where [p1 = h.bbox /!base, p2 = h.bbox /!d, c1 = transform(t, h.bbox /!base), c3 = transform(t, h.bbox /!d),
-                                                                                                                     c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+         inverse(t, p)          = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) - 0.5) * tau * t.dx + t.x0), y: Math.atan2(p.x, p.y) * t.dy + t.y0},
+         transform(t, p)        = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / tau + 0.5,
+                                                                                                               angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
+         point_hits_desc(p, h)  = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
+         point_hits_self(p, h)  = point_hits_desc(p, h) -re [it && p.x <= it.x0 + it.dy],
 
-                                                                                                                     ]});
+         arc_path(h, t)(c)      = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
+                           -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!bbox /!base,             p2 = h /!bbox /-project/ 1,
+                                                                                      c1 = transform(t, p1),            c3 = transform(t, p2),
+                                                                                      c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+
+         path(h, t)(c, f)       = arc_path(h, t)(c) -then- f(c, h) <then> h.xs *![path(x, t)(c, f)] -seq -when- h.xs]});
 
 __
 meta::template('comment', '\'\';     # A mechanism for line or block comments.');

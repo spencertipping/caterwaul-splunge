@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <script src='jquery.js'></script>
+  <script src='caterwaul.js'></script>
+  <script src='caterwaul.std.js'></script>
+  <script src='caterwaul.ui.js'></script>
+  <script src='../splunge.js'></script>
+  <script>
+    $(caterwaul(':all')(function () {
+      $('#splunge-test').mousemove(
+        $('#splunge-test')[0].getContext('2d')
+          <se> it.fillStyle /eq['white'] -then-
+               it.fillRect(0, 0, 800, 400) -then-
+               it.save() -then-
+               it.translate(120, 120) -then-
+               it.scale(100, 100) -then-
+               it.fillStyle /eq['rgba(0, 0, 0, 0.5)'] -then-
+               it.beginPath() -then-
+               caterwaul.splunge(data)(data, {x0: (e.pageX - 400) * -0.01, dx: 1, y0: 0, dy: e.pageY * 0.05})(it) -then-
+               it.fill() -then-
+               it.restore(),
+        where [data = {name: 'foo', value: 1, xs: [{name: 'bar', value: 3}, {name: 'bif', value: 4}]}],
+        given.e)}));
+  </script>
+</head>
+<body>
+  <canvas id='splunge-test' width='800' height='400'></canvas>
+</body>
+</html>
