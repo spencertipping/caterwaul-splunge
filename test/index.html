@@ -9,7 +9,7 @@
   <script>
     $(caterwaul(':all')(function () {
       $('#splunge-test')
-      .mousedown(given.e in tween_to((find(ex / 200 - 1, ey / 200 - 1).bbox || data.bbox) /-c.merge/ {dx: 1})
+      .mousedown(given.e in tween_to((find(ex / 200 - 1, ey / 200 - 1) || data).self_bbox)
                             -where [ex = e.pageX - $('#splunge-test').position().left,
                                     ey = e.pageY - $('#splunge-test').position().top])
 
@@ -24,6 +24,7 @@
              children           = 0,
              random_color()     = 'rgba(0, 20, 40, #{Math.random() * 0.5 + 0.2})',
              child(n)           = ++children -then- {dy:    Math.random() / n,
+                                                     dx:    Math.random(),
                                                      color: random_color(),
                                                      xs:    random_children(n)},
              data               = {name: 'root', y0: 0, dy: 1, xs: random_children(15)},
@@ -58,7 +59,8 @@
                                          it.fillStyle /eq[h === selected ? 'red' : h.color] -then-
                                          it.strokeStyle /eq['white'] -then-
                                          it.fill() -then-
-                                         it.stroke() -when [c.splunge.transformed_width(h, t) > 0.05]) -then-
+                                         it.stroke() -then- true
+                                         -when [c.splunge.transformed_width(h, t) > 0.03]) -then-
                                        it.restore()]}));
   </script>
 </head>

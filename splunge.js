@@ -2,24 +2,24 @@ caterwaul.module( 'splunge' ,function($) {$.splunge=function(data) {;
 return $.splunge.create(data) } ,$.merge($.splunge, (function() {var tau=2*Math.PI,bbox=function(h) {;
 return(function() {var b=function(h,x0,y0,dy) {;
 return h.bbox?h.bbox
-:h.bbox= (function() {var new_x0=x0+ (h.x0||0) + (h.dx||1) ,new_y0=y0+h.y0*dy,new_dy=dy*h.dy;
+:h.bbox= (function() {var self_x0=x0+ (h.x0||0) ,self_dx=h.dx||1,new_x0=self_x0+self_dx,new_y0=y0+h.y0*dy,new_dy=dy*h.dy;
 return(h.xs&& (function(cs) {var c,c0,ci,cl,cr;
 for(var ci=0,cl=cs.length;
 ci<cl;
  ++ci)c=cs[ci] , (b(c,new_x0,new_y0,new_dy) ) ;
-return cs} ) .call(this,h.xs) , {x0:x0,dx: (h.dx||1) + (h.xs? (function(xs) {var x,x0,xi,xl,xr;
+return cs} ) .call(this,h.xs) , {x0:self_x0,dx: (h.dx||1) + (h.xs? (function(xs) {var x,x0,xi,xl,xr;
 for(var x0= (0) ,xi=0,xl=xs.length;
 xi<xl;
  ++xi)x=xs[xi] ,x0= (Math.max(x0,x.bbox.dx) ) ;
 return x0} ) .call(this,h.xs) 
-:0) ,y0:new_y0,dy:new_dy} ) } ) .call(this) } ;
+:0) ,self_dx:self_dx,y0:new_y0,dy:new_dy} ) } ) .call(this) } ;
 return b(h,0,0,1) } ) .call(this) } ,base=function(b) {;
 return{x:b.x0,y:b.y0} } ,mix=function(a,b) {;
 return{x:a.x,y:b.y} } ,d=function(b) {;
 return{x:b.dx,y:b.dy} } ,project=function(b,x) {;
 return{x:b.x0+b.dx*x,y:b.y0+b.dy*x} } ,self_bbox=function(h) {;
 return h.self_bbox?h.self_bbox
-:h.self_bbox= (function(it) {return it.dx=1,it} ) .call(this, ( (function(o) {for(var r= {} ,i=0,l=o.length,x;
+:h.self_bbox= (function(it) {return it.dx=it.self_dx,it} ) .call(this, ( (function(o) {for(var r= {} ,i=0,l=o.length,x;
 i<l;
  ++i)x=o[i] ,r[x[0] ] =x[1] ;
 return r} ) .call(this, ( (function(o) {var ps= [] ;
@@ -54,7 +54,7 @@ return{x:Math.tan( (Math.sqrt(p.x*p.x+p.y*p.y) -0.5) *Math.PI) *t.dx+t.x0,y: (Ma
 return(function() {var d=Math.atan( (p.x-t.x0) /t.dx) /Math.PI+0.5,angle=Math.min(Math.max( (p.y-t.y0) /t.dy*tau,0) ,tau) ;
 return{x:d*Math.cos(angle) ,y:d*Math.sin(angle) ,d:d,angle:angle} } ) .call(this) } ,point_hits=function(p,h) {;
 return(function(it) {return p.x>=it.x0&&p.y>=it.y0&&p.y<=it.y0+it.dy&&it} ) .call(this, (bbox(h) ) ) } ,point_hits_self=function(p,h) {;
-return(function(it) {return it&&p.x<=it.x0+ (h.dx||1) } ) .call(this, (point_hits(p,h) ) ) } ,find_by_transformed=function(h,t,p) {;
+return(function(it) {return it&&p.x<=it.x0+it.self_dx} ) .call(this, (point_hits(p,h) ) ) } ,find_by_transformed=function(h,t,p) {;
 return find_by_point(h,inverse(t,p) ) } ,find_by_point=function(h,p) {;
 return point_hits(p,h) && (point_hits_self(p,h) ?h
 :h.xs&& (function(xs) {var x,x0,xi,xl,xr;
@@ -66,9 +66,9 @@ return function(c) {;
 return(function() {var p1=base(self_bbox(h) ) ,p2=project(self_bbox(h) ,1) ,c1=transform(t,p1) ,c3=transform(t,p2) ,c2=transform(t,mix(p2,p1) ) ,c4=transform(t,mix(p1,p2) ) ;
 return( ( ( (c.moveTo(c1.x,c1.y) ,c.lineTo(c2.x,c2.y) ) ,c.arc(0,0,c2.d,c2.angle,c3.angle) ) ,c.lineTo(c4.x,c4.y) ) ,c.arc(0,0,c4.d,c4.angle,c1.angle,true) ) } ) .call(this) } } ,is_visible=function(h,t) {;
 return bbox(h) .y0+h.bbox.dy>t.y0&&h.bbox.y0<t.y0+t.dy} ,transformed_width=function(h,t) {;
-return transform(t,project(bbox(h) ,1) ) .d-transform(t,base(bbox(h) ) ) .d} ,paths=function(h,t) {;
+return transform(t,project(self_bbox(h) ,1) ) .d-transform(t,base(bbox(h) ) ) .d} ,paths=function(h,t) {;
 return function(f) {;
-return(f(arc_path(h,t) ,h,t) ,h.xs&& (function(xs) {var x,x0,xi,xl,xr;
+return f(arc_path(h,t) ,h,t) && (h.xs&& (function(xs) {var x,x0,xi,xl,xr;
 for(var xi=0,xl=xs.length;
 xi<xl;
  ++xi)x=xs[xi] , (is_visible(x,t) &&paths(x,t) (f) ) ;

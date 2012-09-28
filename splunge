@@ -1795,12 +1795,12 @@ are inferred to be their default values, 0 and 1 respectively.
 
   tau     = 2 * Math.PI,
   bbox(h) = b(h, 0, 0, 1) -where [b(h, x0, y0, dy) = h.bbox <ocq> h.xs *!c[b(c, new_x0, new_y0, new_dy)] -seq -when- h.xs
-                                                                  -then- {x0: x0,     dx: (h.dx || 1) + (h.xs ? h.xs /[0][x0 /-Math.max/ x.bbox.dx] /seq : 0),
-                                                                          y0: new_y0, dy: new_dy}
-                                                                  -where [new_x0 = x0 + (h.x0 || 0) + (h.dx || 1),
-                                                                          new_y0 = y0 + h.y0 * dy, new_dy = dy * h.dy]],
+                                                                  -then- {x0: self_x0, dx: h.dx /or[1] + (h.xs ? h.xs /[0][x0 /-Math.max/ x.bbox.dx] -seq : 0), self_dx: self_dx,
+                                                                          y0: new_y0,  dy: new_dy}
+                                                                  -where [self_x0 = x0 + h.x0 /or[0], self_dx = h.dx || 1, new_x0 = self_x0 + self_dx,
+                                                                                                                           new_y0 = y0 + h.y0 * dy, new_dy = dy * h.dy]],
   base(b) = {x: b.x0, y: b.y0},  mix(a, b)     = {x: a.x, y: b.y},
-  d(b)    = {x: b.dx, y: b.dy},  project(b, x) = {x: b.x0 + b.dx * x, y: b.y0 + b.dy * x},  self_bbox(h) = h.self_bbox -ocq- bbox(h) /pairs /object /seq /se [it.dx = 1],
+  d(b)    = {x: b.dx, y: b.dy},  project(b, x) = {x: b.x0 + b.dx * x, y: b.y0 + b.dy * x},  self_bbox(h) = h.self_bbox -ocq- bbox(h) /pairs /object /seq /se [it.dx = it.self_dx],
 
   Data preparation.
   Splunge is more general than is useful for most data. These methods take common cases and produce items in general form. Some common cases are:
@@ -1843,7 +1843,7 @@ unhovers, clicks, etc, on an individual data element.
                                                                                                               angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
 
   point_hits(p, h)             = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
-  point_hits_self(p, h)        = point_hits(p, h) -re [it && p.x <= it.x0 + (h.dx || 1)],
+  point_hits_self(p, h)        = point_hits(p, h) -re [it && p.x <= it.x0 + it.self_dx],
   find_by_transformed(h, t, p) = find_by_point(h, inverse(t, p)),
   find_by_point(h, p)          = point_hits(p, h) && (point_hits_self(p, h) ? h : h.xs && h.xs |[find_by_point(x, p)] |seq),
 
@@ -1853,8 +1853,8 @@ unhovers, clicks, etc, on an individual data element.
                                                                                             c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
 
   is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
-  transformed_width(h, t)      = transform(t, bbox(h) /-project/ 1).d - transform(t, bbox(h) /!base).d,
-  paths(h, t)(f)               = f(arc_path(h, t), h, t) <then> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
+  transformed_width(h, t)      = transform(t, self_bbox(h) /-project/ 1).d - transform(t, bbox(h) /!base).d,
+  paths(h, t)(f)               = f(arc_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
 
 __
 meta::template('comment', '\'\';     # A mechanism for line or block comments.');
