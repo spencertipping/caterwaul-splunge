@@ -1812,7 +1812,7 @@ are inferred to be their default values, 0 and 1 respectively.
   previously.
 
   normalized(xs, h, h -ocq- 1) = xs *[x /-$.merge/ {y0: y, dy: x.dy / ymax} -se [y += it.dy]] -seq -where [y = 0, ymax = xs /[0][x0 + x.dy] /seq * h],
-  descendant_count(h)          = h.descendant_count -ocq- 1 + h.xs /[0][x0 + x /!descendant_count] /seq /when [h.xs],
+  descendant_count(h)          = h.descendant_count <ocq> 1 + (h.xs ? h.xs /[0][x0 + x /!descendant_count] -seq : 0),
   discrete_tree(xs)            = normalized(xs *[x /-$.merge/ {dy: x /!descendant_count}] -seq),
 
 Transformation layer.

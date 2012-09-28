@@ -36,12 +36,13 @@ for(var xr=new xs.constructor() ,xi=0,xl=xs.length;
 xi<xl;
  ++xi)x=xs[xi] ,xr.push( ( (function(it) {return y+=it.dy,it} ) .call(this, ($.merge(x, {y0:y,dy:x.dy/ymax} ) ) ) ) ) ;
 return xr} ) .call(this,xs) } ) .call(this) } ,descendant_count=function(h) {;
-return(h.descendant_count?h.descendant_count
-:h.descendant_count=1) + (h.xs&& (function(xs) {var x,x0,xi,xl,xr;
+return h.descendant_count?h.descendant_count
+:h.descendant_count=1+ (h.xs? (function(xs) {var x,x0,xi,xl,xr;
 for(var x0= (0) ,xi=0,xl=xs.length;
 xi<xl;
  ++xi)x=xs[xi] ,x0= (x0+descendant_count(x) ) ;
-return x0} ) .call(this,h.xs) ) } ,discrete_tree=function(xs) {;
+return x0} ) .call(this,h.xs) 
+:0) } ,discrete_tree=function(xs) {;
 return normalized( (function(xs) {var x,x0,xi,xl,xr;
 for(var xr=new xs.constructor() ,xi=0,xl=xs.length;
 xi<xl;
