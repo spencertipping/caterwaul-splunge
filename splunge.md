@@ -3,12 +3,8 @@ Licensed under the terms of the MIT source code license
 
 # Introduction
 
-Splunge is a charting library that consists of three layers. The lowest level contains vector-space transformations that are used to turn stacked bar charts into circularly-tessellated rings.
+Splunge is a charting library that consists of two layers. The lower level contains vector-space transformations that are used to turn stacked bar charts into circularly-tessellated rings.
 This layer also inverse-transforms mouse coordinates. (Not all transformations use triangles; rectangles can be transformed into arcs in certain situations.)
-
-The next layer up manages the physics of graph display. This involves modeling all of the view transformations as objects with mass and velocity, and using gravitational fields to pull them
-into the right places. Above this is the data interpretation layer, which assigns objects to data elements and puts them into a rectangular vector space. This layer is responsible for slicing
-unstructured data into lists of stacked bar-trees.
 
     caterwaul.module('splunge', ':all', function ($) {
       ($.splunge(data) = $.splunge.create(data)) /-$.merge/ wcapture [
@@ -84,6 +80,20 @@ unhovers, clicks, etc, on an individual data element.
       transform(t, p)              = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
                                                                                                                   angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
 
+## Animation functions
+
+This simplifies viewport creation. Chances are, you want to give the user a way to pan around the graph, zoom to particular segments, etc. This interface lets you do that without
+introducing too much conceptual overhead. In particular, it encapsulates animations. The second argument passed to the viewport() function is a callback that will be invoked on the
+transform each time it is changed during an animation.
+
+    cosine(x)                    = Math.cos(x * Math.PI) * -0.5 + 0.5,    // Tween function, not an alias to Math.cos()
+    viewport(initial, f)         = wcapture [_transform = initial,  stop()                      = clearInterval(_interval) -then [_interval = null] -when._interval,
+                                             _interval  = null,     animate(t, duration, tween) = stop() <then> _interval -eq- interpolator(_transform, t, +new Date,
+                                                                                                                                            duration || 400, tween || cosine) /-setInterval/ 40,
+                                                                    transform()                                  = _transform,
+                                                                    interpolator(s, t, c, d, i)(now = +new Date) = stop() -then- now /eq[c + d] -when [now > c + d] <then>
+                                                                                                                   f(_transform = interpolate(s, t, i((now - c) / d)))],
+
 ## Back-transformed point logic
 
 This is used so that the user can click on curved graph elements. We back-transform the point into logical graph space so that we can use normal rectangular bounds. Note that the functions
@@ -97,14 +107,15 @@ here operate under the assumption that parent Y-bounds contain child Y-bounds.
 ## Rendering functions
 
 Stuff to draw arc slices. It's up to you to actually draw things, but these functions construct paths that you can later fill in or draw outlines for. (These same paths are not used for
-testing pointer-shape intersection; see above for that.)
+testing pointer-shape intersection; see above for that.) The paths() function renders all paths for the given hierarchy. It closes over the hierarchy and transform, and the following
+invocation expects a per-path callback to render each segment. That function is invoked on the path, the data tree it represents, and the current rendering transform. If the callback
+returns a falsy value, its children are not rendered.
 
     arc_path(h, t)(c)            = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
                                                         -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
                                                                                                                    c1 = transform(t, p1),            c3 = transform(t, p2),
                                                                                                                    c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
 
-    dt(t, p1, p2)                = tp1 /pairs *[[x[0], tp2[x[0]] - x[1]]] /object -seq -where [tp1 = transform(t, p1),
-                                                                                               tp2 = transform(t, p2)],
+    dt(t, p1, p2)                = tp1 /pairs *[[x[0], tp2[x[0]] - x[1]]] /object -seq -where [tp1 = t /-transform/ p1, tp2 = t /-transform/ p2],
     is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
     paths(h, t)(f)               = f(arc_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});

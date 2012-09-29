@@ -9,16 +9,16 @@
   <script>
     $(caterwaul(':all')(function () {
       $('#splunge-test')
-      .mousedown(given.e in tween_to((find(ex / 200 - 1, ey / 200 - 1) || data).self_bbox)
+      .mousedown(given.e in v.animate((find(ex / 300 - 1, ey / 300 - 1) || data).self_bbox, 3000)
                             -where [ex = e.pageX - $('#splunge-test').position().left,
                                     ey = e.pageY - $('#splunge-test').position().top])
 
-      .mousemove(given.e in selected /eq.h -then- render(data, current_transform)
+      .mousemove(given.e in selected /eq.h -then- render(data, v.transform())
                             -where [ex = e.pageX - $('#splunge-test').position().left,
                                     ey = e.pageY - $('#splunge-test').position().top,
-                                    h  = find(ex / 200 - 1, ey / 200 - 1)]),
+                                    h  = find(ex / 300 - 1, ey / 300 - 1)]),
 
-      render(data, current_transform),
+      render(data, v.transform()),
       $('#status').text('#{children} data elements'),
       where [random_children(n) = caterwaul.splunge.normalized(n[n - Math.random() * 2] *[child(n * 0.6)] -seq),
              children           = 0,
@@ -29,28 +29,20 @@
                                                      xs:    random_children(n)},
              data               = {name: 'root', y0: 0, dy: 1, xs: random_children(15)},
              selected           = null,
-             current_transform  = {x0: 0, dx: 1, y0: 0, dy: 1},
 
-             tween_interval     = null,
-             tween_to(p)        = clearInterval(tween_interval) /when.tween_interval -then-
-                                  tween_interval /eq [setInterval(interpolate(current_transform, p, +new Date), 30)],
+             v                  = viewport({x0: 3, dx: 2, y0: 0, dy: 1}, "render(data, _)".qf),
 
              duration           = 800,
              spline(x)          = Math.cos(Math.PI * x) * -0.5 + 0.5,
-             interpolate(p1, p2, start)() = render(data, current_transform = c.splunge.interpolate(p1, p2, x))
-                                            -then- (render(data, current_transform = p2),
-                                                    clearInterval(tween_interval)) /when [now > start + duration]
-                                            -where [now = +new Date,
-                                                    x   = Math.min(1, spline((now - start) / duration))],
 
              c                  = caterwaul,
-             find(x, y)         = c.splunge.find_by_transformed(data, current_transform, {x: x, y: y}),
+             find(x, y)         = c.splunge.find_by_transformed(data, v.transform(), {x: x, y: y}),
 
              render(data, t)    = $('#splunge-test')[0].getContext('2d')
                                   <se> it.fillStyle /eq['white'] -then-
-                                       it.fillRect(0, 0, 800, 400) -then-
+                                       it.fillRect(0, 0, 800, 600) -then-
                                        it.save() -then-
-                                       it.scale(200, 200) -then-
+                                       it.scale(300, 300) -then-
                                        it.translate(1, 1) -then-
                                        it.lineWidth /eq[0.005] -then-
                                        c.splunge.paths(data, t)(given [p, h, t] in
@@ -60,14 +52,13 @@
                                          it.strokeStyle /eq['white'] -then-
                                          it.fill() -then-
                                          it.stroke() -then- true
-                                         -when [delta.d > 0.01 && delta.angle > tau * 0.001]
-                                         -where [delta = dt(t, self_bbox(h) /!base, self_bbox(h) /-project/ 1)]) -then-
+                                         -when [delta.d > 0.1 && delta.angle > tau * 0.004]
+                                         -where [delta = dt(t, bbox(h) /!base, bbox(h) /-project/ 1)]) -then-
                                        it.restore()],
       using [caterwaul.splunge]}));
   </script>
 </head>
 <body>
-  <div id='status'></div>
-  <canvas id='splunge-test' width='800' height='400'></canvas>
+  <canvas id='splunge-test' width='800' height='600'></canvas>
 </body>
 </html>
