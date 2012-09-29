@@ -1797,7 +1797,7 @@ are inferred to be their default values, 0 and 1 respectively.
                                                                   -then- {x0: self_x0, dx: h.dx /or[1] + (h.xs ? h.xs /[0][x0 /-Math.max/ x.bbox.dx] -seq : 0), self_dx: self_dx,
                                                                           y0: new_y0,  dy: new_dy}
                                                                   -where [self_x0 = x0 + h.x0 /or[0], self_dx = h.dx || 1, new_x0 = self_x0 + self_dx,
-                                                                                                                           new_y0 = y0 + h.y0 * dy, new_dy = dy * h.dy]],
+                                                                                                                           new_y0 = y0 + h.y0 /or[0] * dy, new_dy = dy * h.dy]],
   base(b) = {x: b.x0, y: b.y0},  mix(a, b)     = {x: a.x, y: b.y},
   d(b)    = {x: b.dx, y: b.dy},  project(b, x) = {x: b.x0 + b.dx * x, y: b.y0 + b.dy * x},  self_bbox(h) = h.self_bbox -ocq- bbox(h) /pairs /object /seq /se [it.dx = it.self_dx],
 
@@ -1811,7 +1811,7 @@ are inferred to be their default values, 0 and 1 respectively.
   previously.
 
   normalized(xs, h, h -ocq- 1) = xs *[x /-$.merge/ {y0: y, dy: x.dy / ymax} -se [y += it.dy]] -seq -where [y = 0, ymax = xs /[0][x0 + x.dy] /seq * h],
-  descendant_count(h)          = h.descendant_count -ocq- 1 + h.xs /[0][x0 + x /!descendant_count] /seq /when [h.xs],
+  descendant_count(h)          = h.descendant_count <ocq> 1 + (h.xs ? h.xs /[0][x0 + x /!descendant_count] -seq : 0),
   discrete_tree(xs)            = normalized(xs *[x /-$.merge/ {dy: x /!descendant_count}] -seq),
 
 Transformation layer.
@@ -1837,7 +1837,7 @@ unhovers, clicks, etc, on an individual data element.
   interpolate(t1, t2, x)       = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
                                                                           scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
 
-  inverse(t, p)                = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) - 0.5) * Math.PI) * t.dx + t.x0, y: (Math.atan2(p.y, p.x) / tau + 1) % 1 * t.dy + t.y0},
+  inverse(t, p)                = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) /-Math.min/ 1.0 - 0.5) * Math.PI) * t.dx + t.x0, y: (Math.atan2(p.y, p.x) / tau + 1) % 1 * t.dy + t.y0},
   transform(t, p)              = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
                                                                                                               angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
 
@@ -1855,11 +1855,13 @@ unhovers, clicks, etc, on an individual data element.
   testing pointer-shape intersection; see above for that.)
 
   arc_path(h, t)(c)            = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
-                                 -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
-                                                                                            c1 = transform(t, p1),            c3 = transform(t, p2),
-                                                                                            c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+                                                      -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
+                                                                                                                 c1 = transform(t, p1),            c3 = transform(t, p2),
+                                                                                                                 c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+
+  dt(t, p1, p2)                = tp1 /pairs *[[x[0], tp2[x[0]] - x[1]]] /object -seq -where [tp1 = transform(t, p1),
+                                                                                             tp2 = transform(t, p2)],
   is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
-  transformed_width(h, t)      = transform(t, self_bbox(h) /-project/ 1).d - transform(t, bbox(h) /!base).d,
   paths(h, t)(f)               = f(arc_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
 
 __
