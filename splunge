@@ -1794,7 +1794,8 @@ are inferred to be their default values, 0 and 1 respectively.
                                                                           y0: new_y0,  dy: new_dy}
                                                                   -where [self_x0 = x0 + h.x0 /or[0], self_dx = h.dx || 1, new_x0 = self_x0 + self_dx,
                                                                                                                            new_y0 = y0 + h.y0 /or[0] * dy, new_dy = dy * h.dy]],
-  base(b) = {x: b.x0, y: b.y0},  mix(a, b)     = {x: a.x, y: b.y},
+
+  base(b) = {x: b.x0, y: b.y0},  mix(a, b)     = {x: a.x, y: b.y},                          bound(a, b)  = {x0: a.x, dx: b.x - a.x, y0: a.y, dy: b.y - a.y},
   d(b)    = {x: b.dx, y: b.dy},  project(b, x) = {x: b.x0 + b.dx * x, y: b.y0 + b.dy * x},  self_bbox(h) = h.self_bbox -ocq- bbox(h) /pairs /object /seq /se [it.dx = it.self_dx],
 
   Data preparation.
@@ -1830,25 +1831,57 @@ Transformations are immutable and support linear combination. This is used to na
 Interaction is also handled here. The only rule is that the view focuses on the object where the user clicks. We also emit jQuery events on the <canvas> element whenever the user hovers,
 unhovers, clicks, etc, on an individual data element.
 
-  interpolate(t1, t2, x)       = scale(t1, 1.0 - x) /-add/ scale(t2, x),  add(t1, t2) = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
-                                                                          scale(t, x) = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
+  interpolate(t1, t2, x) = scale(t1, 1.0 - x) /-plus/ scale(t2, x),  plus(t1, t2)  = {x0: t1.x0 + t2.x0, dx: t1.dx + t2.dx, y0: t1.y0 + t2.y0, dy: t1.dy + t2.dy},
+                                                                     scale(t, x)   = {x0: t.x0  * x,     dx: t.dx  * x,     y0: t.y0  * x,     dy: t.dy  * x},
+                                                                     union(t1, t2) = min /-bound/ max
+                                                                                     -where [p1 = t1 /!base, p2 = t1 /-project/ 1, p3 = t2 /!base, p4 = t2 /-project/ 1,
+                                                                                             min = [p1, p2, p3, p4] /['x0 dx y0 dy'.qw *k[[k, x[k] /-Math.min/ x0[k]]] /object -seq] -seq,
+                                                                                             max = [p1, p2, p3, p4] /['x0 dx y0 dy'.qw *k[[k, x[k] /-Math.max/ x0[k]]] /object -seq] -seq],
 
-  inverse(t, p)                = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) /-Math.min/ 1.0 - 0.5) * Math.PI) * t.dx + t.x0, y: (Math.atan2(p.y, p.x) / tau + 1) % 1 * t.dy + t.y0},
-  transform(t, p)              = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
-                                                                                                              angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
+  inverse(t, p)          = {x: Math.tan((Math.sqrt(p.x * p.x + p.y * p.y) /-Math.min/ 1.0 - 0.5) * Math.PI) * t.dx + t.x0, y: (Math.atan2(p.y, p.x) / tau + 1) % 1 * t.dy + t.y0},
+  transform(t, p)        = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
+                                                                                                        angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
 
   Animation functions.
   This simplifies viewport creation. Chances are, you want to give the user a way to pan around the graph, zoom to particular segments, etc. This interface lets you do that without
   introducing too much conceptual overhead. In particular, it encapsulates animations. The second argument passed to the viewport() function is a callback that will be invoked on the
   transform each time it is changed during an animation.
 
-  cosine(x)                    = Math.cos(x * Math.PI) * -0.5 + 0.5,    // Tween function, not an alias to Math.cos()
-  viewport(initial, f)         = wcapture [_transform = initial,  stop()                      = clearInterval(_interval) -then [_interval = null] -when._interval,
-                                           _interval  = null,     animate(t, duration, tween) = stop() <then> _interval -eq- interpolator(_transform, t, +new Date,
-                                                                                                                                          duration || 400, tween || cosine) /-setInterval/ 40,
-                                                                  transform()                                  = _transform,
-                                                                  interpolator(s, t, c, d, i)(now = +new Date) = stop() -then- now /eq[c + d] -when [now > c + d] <then>
-                                                                                                                 f(_transform = interpolate(s, t, i((now - c) / d)))],
+  cosine(x)                   = Math.cos(x * Math.PI) * -0.5 + 0.5,    // Tween function, not an alias to Math.cos()
+  viewport(initial, f)        = wcapture [_transform = initial,  stop()                      = clearInterval(_interval) -then [_interval = null] -when._interval,
+                                          _interval  = null,     animate(t, duration, tween) = stop() <then> _interval -eq- interpolator(_transform, t, +new Date,
+                                                                                                                                         duration || 400, tween || cosine) /-setInterval/ 40,
+                                                                 transform(t)                                 = t ? f(_transform = t) : _transform,
+                                                                 interpolator(s, t, c, d, i)(now = +new Date) = stop() -then- now /eq[c + d] -when [now > c + d] <then>
+                                                                                                                interpolate(s, t, i((now - c) / d)) /!transform],
+
+  default_viewport(canvas, t) = t /or.{x0: 0, dx: 1, y0: 0, dy: 1} /-viewport/ default_renderer(canvas),
+
+  Interaction.
+  You can set up any kind of interaction model you want to, but Splunge provides some defaults that allow the user to pan around the data, change zoom levels, and select nodes. These actions
+  are emitted as events on the <canvas> element that contains the chart, and the events that are fired contain metadata about which data element was clicked on, hovered, unhovered, etc. If
+  you are using this interaction model, you should set up rendering that is triggered by the 'splunge_render' event:
+
+  | $('#my-canvas').bind('splunge_render', my_render_function)
+
+  You can use default_renderer() to simplify this process. The default mouse/keybindings are:
+
+  | Mouse drag          pan across data by adjusting the viewport's x0 and y0
+    Shift + mouse drag  zoom data by adjusting the viewport's dx and dy
+    Ctrl + click        zoom to element
+
+  The canvas given to default_interaction() can be either a jQuery object or a canvas element.
+
+  drag_events(canvas)            = self.mousedown(start_dragging).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
+                                   -where [last_x = 0, last_y = 0, dragging = false, last_selected = null, $doc = jQuery(document), self = jQuery(canvas),
+                                           record(x, y)      = last_x /eq.x -then- last_y /eq.y,
+                                           start_dragging(e) = record(e.pageX, e.pageY) -then- $doc /~mousemove/ drag /~mouseup/ stop_dragging,
+                                           stop_dragging(e)  = $doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
+                                           drag(e)           = self.trigger('drag_delta', {} / e /-$.merge/ {dx: e.pageX - last_x, dy: e.pageY - last_y}) -then- record(e.pageX, e.pageY)],
+
+  default_interaction(canvas, v) = drag_events(canvas).on('drag_delta', pan_or_scale)
+                                   -where [x_scale(v) = v.transform().dx,  pan_or_scale(e) = e.shiftKey ? scale(e) : pan(e),
+                                           y_scale(v) = v.transform().dy,  scale(e)        = v.transform(v.transform() /!base |-plus| times(v.transform() /!d, {x: e.dx, y: e.dy}))],
 
   Back-transformed point logic.
   This is used so that the user can click on curved graph elements. We back-transform the point into logical graph space so that we can use normal rectangular bounds. Note that the functions
@@ -1865,14 +1898,14 @@ unhovers, clicks, etc, on an individual data element.
   invocation expects a per-path callback to render each segment. That function is invoked on the path, the data tree it represents, and the current rendering transform. If the callback
   returns a falsy value, its children are not rendered.
 
-  arc_path(h, t)(c)            = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
-                                                      -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
-                                                                                                                 c1 = transform(t, p1),            c3 = transform(t, p2),
-                                                                                                                 c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+  single_path(h, t)(c) = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
+                                              -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
+                                                                                                         c1 = transform(t, p1),            c3 = transform(t, p2),
+                                                                                                         c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
 
-  dt(t, p1, p2)                = tp1 /pairs *[[x[0], tp2[x[0]] - x[1]]] /object -seq -where [tp1 = t /-transform/ p1, tp2 = t /-transform/ p2],
-  is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
-  paths(h, t)(f)               = f(arc_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
+  dt(t, p1, p2)        = tp1 /pairs *[[x[0], tp2[x[0]] - x[1]]] /object -seq -where [tp1 = t /-transform/ p1, tp2 = t /-transform/ p2],
+  is_visible(h, t)     = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
+  paths(h, t)(f)       = f(single_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
 
 __
 meta::template('comment', '\'\';     # A mechanism for line or block comments.');
