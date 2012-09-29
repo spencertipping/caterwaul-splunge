@@ -11,8 +11,7 @@ into the right places. Above this is the data interpretation layer, which assign
 unstructured data into lists of stacked bar-trees.
 
     caterwaul.module('splunge', ':all', function ($) {
-      $.splunge(data) = $.splunge.create(data),
-      $.splunge /-$.merge/ wcapture [
+      ($.splunge(data) = $.splunge.create(data)) /-$.merge/ wcapture [
 
 # Interpretation layer
 
@@ -85,16 +84,25 @@ unhovers, clicks, etc, on an individual data element.
       transform(t, p)              = {x: d * Math.cos(angle), y: d * Math.sin(angle), d: d, angle: angle} -where [d     = Math.atan((p.x - t.x0) / t.dx) / Math.PI + 0.5,
                                                                                                                   angle = (p.y - t.y0) / t.dy * tau |-Math.max| 0 |-Math.min| tau],
 
-      point_hits(p, h)             = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
-      point_hits_self(p, h)        = point_hits(p, h) -re [it && p.x <= it.x0 + it.self_dx],
-      find_by_transformed(h, t, p) = find_by_point(h, inverse(t, p)),
-      find_by_point(h, p)          = point_hits(p, h) && (point_hits_self(p, h) ? h : h.xs && h.xs |[find_by_point(x, p)] |seq),
+## Back-transformed point logic
 
-      arc_path(h, t)(c)            = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
-                                     -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
-                                                                                                c1 = transform(t, p1),            c3 = transform(t, p2),
-                                                                                                c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+This is used so that the user can click on curved graph elements. We back-transform the point into logical graph space so that we can use normal rectangular bounds. Note that the functions
+here operate under the assumption that parent Y-bounds contain child Y-bounds.
 
-      is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
-      transformed_width(h, t)      = transform(t, self_bbox(h) /-project/ 1).d - transform(t, bbox(h) /!base).d,
-      paths(h, t)(f)               = f(arc_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
+    point_hits(p, h)             = bbox(h) -re [p.x >= it.x0 && p.y >= it.y0 && p.y <= it.y0 + it.dy && it],
+    point_hits_self(p, h)        = point_hits(p, h) -re [it && p.x <= it.x0 + it.self_dx],
+    find_by_transformed(h, t, p) = find_by_point(h, inverse(t, p)),
+    find_by_point(h, p)          = point_hits(p, h) && (point_hits_self(p, h) ? h : h.xs && h.xs |[find_by_point(x, p)] |seq),
+
+## Rendering functions
+
+Stuff to draw arc slices. It's up to you to actually draw things, but these functions construct paths that you can later fill in or draw outlines for. (These same paths are not used for
+testing pointer-shape intersection; see above for that.)
+
+    arc_path(h, t)(c)            = c.moveTo(c1.x, c1.y) -then- c.lineTo(c2.x, c2.y) -then- c.arc(0, 0, c2.d, c2.angle, c3.angle) -then- c.lineTo(c4.x, c4.y)
+                                   -then- c.arc(0, 0, c4.d, c4.angle, c1.angle, true) -where [p1 = h /!self_bbox /!base,        p2 = h /!self_bbox /-project/ 1,
+                                                                                              c1 = transform(t, p1),            c3 = transform(t, p2),
+                                                                                              c2 = transform(t, p2 /-mix/ p1),  c4 = transform(t, p1 /-mix/ p2)],
+    is_visible(h, t)             = bbox(h).y0 + h.bbox.dy > t.y0 && h.bbox.y0 < t.y0 + t.dy,
+    transformed_width(h, t)      = transform(t, self_bbox(h) /-project/ 1).d - transform(t, bbox(h) /!base).d,
+    paths(h, t)(f)               = f(arc_path(h, t), h, t) <and> h.xs *![paths(x, t)(f) -when- is_visible(x, t)] -seq -when- h.xs]});
