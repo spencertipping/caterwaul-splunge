@@ -38,6 +38,9 @@ index of that coordinate. This expression is then used in a reduction, which is 
                                       minus = r(n, 'a, b'.qs, '[x]'.qs, 'x, y'.qs, 'a[i] - b[i]'.qs),  scale = r(n, 'a, b'.qs, '[x]'.qs, 'x, y'.qs, 'a[i] * b'.qs),
                                       dot   = r(n, 'a, b'.qs, 'x'.qs, 'x + y'.qs, 'a[i] * b[i]'.qs),   norm  = r(n, 'a'.qs, 'Math.sqrt(x)'.qs, 'x + y'.qs, 'a[i] * a[i]'.qs),
 
+                                      min   = r(n, 'a, b'.qs, '[x]'.qs, 'x, y'.qs, 'Math.min(a[i], b[i])'.qs),
+                                      max   = r(n, 'a, b'.qs, '[x]'.qs, 'x, y'.qs, 'Math.max(a[i], b[i])'.qs),
+
                                       macv  = r(n, 'a, b, c'.qs, '[x]'.qs, '[x, y]'.qs, 'a[i] + b[i] * c[i]'.qs),
                                       macs  = r(n, 'a, b, c'.qs, '[x]'.qs, '[x, y]'.qs, 'a[i] + b * c[i]'.qs)]
 
