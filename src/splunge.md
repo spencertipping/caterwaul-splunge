@@ -30,15 +30,16 @@ Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the p
 can use the polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a scale(x, x) transformation to
 make it fit inside a 2x by 2x box centered at the origin.
 
-      atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
-      id(x)      = x,            scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
+      tau = Math.PI * 2,  atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
+                          id(x)      = x,            scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
 
       x_tangent     = capture [transform = componentwise(scaled_tan, id), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, id), inverse() = x_tangent],
       y_tangent     = capture [transform = componentwise(id, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise(id, scaled_atan), inverse() = y_tangent],
-      inverse_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],                             inverse() = polar],
-      polar         = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = inverse_polar],
+      inverse_polar = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = polar],
+      polar         = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],                             inverse() = inverse_polar],
 
-      composite(ts = arguments) = capture [transform(v) = ts /[v][x(x0)] -seq, inverse() = composite.apply(this, ts *[ts[xl - xi - 1].inverse()] -seq)],
+      // Arguments to composite() are ordered like composed functions: composite(t1, t2, t3).transform(x) = t1.transform(t2.transform(t3.transform(x)))
+      composite(ts = arguments) = capture [transform(v) = ts /[v][xs[xl - xi - 1].transform(x0)] -seq, inverse() = this.inverse_ -dcq- composite.apply(this, +ts *[x.inverse()] -seq) /se[it.inverse_ = this]],
 
 # Boxes and rectangles
 
@@ -57,22 +58,19 @@ to use a layout function if you want to create a normal chart easily. For exampl
 The stack() function accumulates an offset from the dot product of the given vector and the bounding box offset of each entry. In this case we specified the vector [0, 1], so stacking proceeds
 vertically. You can also use it to stack descendants, though if your charts are large or infinite you will want to consider using lazy_stack().
 
+    box_ctor = given[v, dv][this.v = v, this.dv = dv, null] -se- it.prototype /-$.merge/
+               capture [area()            = this.dv[0] * this.dv[1],               contains(v)  = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
+                        interpolate(b, x) = this.scale(1 - x) /~plus/ b.scale(x),  intersect(b) = this /~map_corners/ "b /~intern/ _".qf,
+                        transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,   union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
+                                                                                                                                   c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
+
+                        intern(v) = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,  map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
+                        plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),   transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
+                        scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),     bound()           = this,
+                        times(v)  = box(this.v, v /-vtimes/ this.dv),                  inverse()         = box(this.v /-vscale/ -1, [1 / this.dv[0], 1 / this.dv[1]])],
+
     box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-1/0, -1/0], [1/0, 1/0]),
     rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([   0,    0], [  0,   0]),
-
-    box_ctor   = given[v, dv][this.v = v, this.dv = dv]
-                 -se- it.prototype /-$.merge/ capture [area()            = this.dv[0] * this.dv[1],               plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),
-                                                       interpolate(b, x) = this.scale(1 - x) /~plus/ b.scale(x),  scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),
-                                                       transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,   inverse() = box(this.v /-vscale/ -1, [1 / this.dv[0], 1 / this.dv[1]]),
-                                                                                                                  times(v)  = box(this.v, v /-vtimes/ this.dv),
-
-                                                       bound()      = this,  intersect(b) = this /~map_corners/ "b /~intern/ _".qf,
-                                                                             union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
-                                                                                                                             c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
-                                                       transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
-                                                       intern(v)         = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,
-                                                       contains(v)       = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
-                                                       map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)]],
 
 # Infinite data sets
 
@@ -90,17 +88,18 @@ List data is designed to be transformed incrementally. Traversal is expressed as
 Any object that supports the reduce(x, f) and bound() methods can be rendered as a graph element. Cons cells as defined here do not have enough information to be rendered safely if they are infinite,
 though they will work just fine (albeit inefficiently) for small finite datasets.
 
-    cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs) = xs /[null][cons(x, k(x0))] -seq,  cons_to_array(c) = c.reduce([], given[x, rest] [[x].concat(rest())]),
+    cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /[null][cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x].concat(rest())]),
+    k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),        reduce(xs, x_fn, f) = xs && xs.reduce(x_fn, f),
 
-    cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn] -se- it.prototype /-$.merge/ capture [reduce(x, f, r = this.rest) = f(this.first, r ? "r.reduce(x, f)".qf : x),
-                                                                                                                     transform_with(t)           = map("_.transform_with(t)".qf, this),
-                                                                                                                     bound()                     = bound_everything],
-    k(x)()        = x,
-    map(f, xs)    = xs.reduce(null /!k, given[x, rest] [cons(f(x), rest)]),               append(xs, ys_f) = xs === null ? ys_f() : xs.reduce(ys_f, cons),
-    filter(f, xs) = xs.reduce(null /!k, given[x, rest] [f(x) ? cons(x, rest) : rest()]),  each(f, xs)      = xs.reduce(xs   /!k, given[x, rest] [f(x), rest()]),
+    cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, null] -se- it.prototype /-$.merge/
+                capture [reduce(x, f, r = this.rest) = f(this.first, r ? "r().reduce(x, f)".qf : x),  transform_with(t) = map("_.transform_with(t)".qf, this),
+                                                                                                      bound()           = bound_everything],
 
-    take_while(f, xs)    = xs.reduce(null /!k, given[x, rest] [f(x) ? cons(x, rest) : null]),
-    descend_while(f, xs) = xs.reduce ? xs.reduce(null /!k, given[x, rest] [take_while(f, descend_while(f, k(x)) /-append/ "descend_while(f, rest())".qf)]) : x,
+    map(f, xs)    = reduce(xs, null /!k, given[x, rest] [cons(f(x), rest)]),               append(xs, ys_f) = xs ? xs.reduce(ys_f, cons) : ys_f(),
+    filter(f, xs) = reduce(xs, null /!k, given[x, rest] [f(x) ? cons(x, rest) : rest()]),  each(f, xs)      = reduce(xs, xs /!k, given[x, rest] [f(x), rest()]),
+
+    take_while(f, xs)    = reduce(xs, null /!k, given[x, rest] [f(x) ? cons(x, rest) : null]),
+    descend_while(f, xs) = !xs || xs.reduce ? reduce(xs, null /!k, given[x, rest] [take_while(f, descend_while(f, xs)) /-append/ take_while(f, "descend_while(f, rest())".qf)]) : xs,
 
 ## Artificial bounding
 
@@ -111,8 +110,10 @@ things that is known to have a specified finite width. When the infinite tower i
 You can use the bounded() function to introduce a bounding box onto an object, usually a cons cell, whose bounding box is too large or unknown. This bounding box will be used to figure out when we can
 skip rendering for a particular element. You'll probably use x_stack() and y_stack() more often.
 
-    bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [1/0, 1]),  x_stack(xs) = x_shadow(xs, xs.first.bound()),
-                                                                        y_shadow(s, bound) = bounded(s, bound /~times/ [1, 1/0]),  y_stack(xs) = y_shadow(xs, xs.first.bound()),
+    bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [1/0, 1]),  y_shadow(s, bound) = bounded(s, bound /~times/ [1, 1/0]),
+
+    x_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0, given[x, rest][x.bound()[0] + rest()]), 1]),  x_stack(xs) = x_shadow(xs, xs.first.bound()),
+    y_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0, given[x, rest][x.bound()[0] + rest()]), 1]),  y_stack(xs) = y_shadow(xs, xs.first.bound()),
 
 # Rendering
 
@@ -148,7 +149,7 @@ these pieces can be changed. For a ring chart, for example, the transformations 
 
     viewport(data = my_data,
              zoom_transform = translate([0, 0]),
-             view_transform = composite(x_arctangent, polar))
+             view_transform = composite([-200, -200] /-box/ [400, 400], x_arctangent, polar))     // polar-transform coordinates, then compress x (distance), then map to screen coordinates
 
 ## Immutability and animation
 
@@ -157,19 +158,18 @@ Viewport objects aren't mutable, but they do support animation. This is done usi
     animation = start_viewport.animate(end_viewport, 400, cosine_tween),
     i = setInterval("animation_viewport.viewport(), clearInterval(i) -when- animation_viewport.is_complete()".qf, 30)
 
-This paradigm allows you to do things like bookmark previous viewports, including the immutable data they pointed to as well as the immutable zoom and view transformations.
+This immutability allows you to store previous viewports (e.g. for bookmarking), including the immutable data they pointed to as well as the immutable zoom and view transformations.
 
     cosine_tween(x)            = Math.cos(x * Math.PI) * -0.5 + 0.5,
     viewport(data, zoom, view) = capture [transformed_data()           = data /~transform_with/ zoom /~transform_with/ view,           with_zoom(z) = viewport(data, z, view),
                                           animate(to, duration, tween) = animation(this, to, duration || 400, tween || cosine_tween),  with_data(d) = viewport(d, zoom, view),
-                                          find(v)                      = descend_while("_.bound().contains(v)".qf).first,              zoom() = zoom,  view() = view,  data() = data,
+                                          interpolate(v, x)            = this /~with_zoom/ zoom.interpolate(v.zoom(), x),              find(v)      = descend_while("_.bound().contains(v)".qf).first,
 
-                                          interpolate(v, x)            = this /~with_zoom/ zoom.interpolate(v.zoom(), x)],
+                                          zoom() = zoom,                 change_offset(p1, p2) = this |~with_zoom| zoom /~transform_with/ translate(p1).inverse() /~transform_with/ translate(p2),
+                                          view() = view, data() = data,  change_scale(p1, p2)  = this |~with_zoom| zoom /~transform_with/ scale    (p1).inverse() /~transform_with/ scale(p2)],
 
-    animation(v1, v2, duration, tween) = capture [start         = +new Date,                     viewport()            = v1.interpolate(v2, this.factor()),
-                                                  is_complete() = +new Date - start > duration,  factor(t = +new Date) = 1 /-Math.min/ tween((t - start) / duration)],
-
-    // TODO: fix interaction stuff below
+    animation(v1, v2, duration, tween) = capture [start         = +new Date,                      viewport()            = v1.interpolate(v2, this.factor()),
+                                                  is_complete() = +new Date - start >= duration,  factor(t = +new Date) = 1 /-Math.min/ tween((t - start) / duration)],
 
 ## Interaction
 
@@ -177,25 +177,38 @@ You can set up any kind of interaction model you want to, but Splunge provides s
 as events on the <canvas> element that contains the chart, and the events that are fired contain metadata about which data element was clicked on, hovered, unhovered, etc. If you are using this
 interaction model, you should set up rendering that is triggered by the 'splunge_render' event:
 
-    $('#my-canvas').bind('splunge_render', my_render_function)
+    $('#my-canvas').on('splunge_render', my_render_function)
+    -where [viewport_bounds                 = box([0, 0], [400, 400]),
+            draw(path)(box)                 = my_context.beginPath() -then- path(box, my_context) -then- my_context.fill(),
+            render(data)                    = each(draw(arc_path), descendants_while("_.intersect(viewport_bounds).area() > 0.01".qf, data)),
+            my_context                      = $('#my-canvas').getContext('2d'),
+            my_render_function(e, viewport) = render(viewport.data())]
 
-You can use default_renderer() to simplify this process. The default mouse/keybindings are:
+The default mouse/keybindings are:
 
-    Mouse drag          pan across data by adjusting the viewport's x0 and y0
-    Shift + mouse drag  zoom data by adjusting the viewport's dx and dy
+    Mouse drag          pan by adjusting the viewport's zoom translation
+    Shift + mouse drag  zoom by adjusting the viewport's zoom scale
     Ctrl + click        zoom to element
 
-The canvas given to default_interaction() can be either a jQuery object or a canvas element.
+The canvas given to default_interaction() can be either a jQuery object or a canvas element. You can also receive mouse events per data item by listening for splunge_mouse{down,up,out,over,move}. These
+events give you the original pageX and pageY coordinates along with the points transformed into data-space.
 
-    drag_events(canvas)            = self.mousedown(start_dragging).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
-                                     -where [last_x = 0, last_y = 0, dragging = false, last_selected = null, $doc = jQuery(document), self = jQuery(canvas),
-                                             record(x, y)      = last_x /eq.x -then- last_y /eq.y,
-                                             start_dragging(e) = record(e.pageX, e.pageY) -then- $doc /~mousemove/ drag /~mouseup/ stop_dragging,
-                                             stop_dragging(e)  = $doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
-                                             drag(e)           = self.trigger('drag_delta', {} / e /-$.merge/ {dx: e.pageX - last_x, dy: e.pageY - last_y}) -then- record(e.pageX, e.pageY)],
+    drag_events(canvas) = self.mousedown(start_dragging).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
+                          -where [last_x = 0, last_y = 0, dragging = false, last_selected = null, $doc = jQuery(document), self = jQuery(canvas),
+                                  record(x, y)      = last_x /eq.x -then- last_y /eq.y,
+                                  start_dragging(e) = record(e.pageX, e.pageY) -then- $doc /~mousemove/ drag /~mouseup/ stop_dragging,
+                                  stop_dragging(e)  = $doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
+                                  drag(e)           = self.trigger('splunge_drag_delta', {p1: [last_x - x, last_y - y], p2: [e.pageX - x, e.pageY - y]}) -then- record(e.pageX, e.pageY)
+                                                      -where [o = self.offset(), x = o.left, y = o.top]],
 
-    default_interaction(canvas, v) = drag_events(canvas).on('drag_delta', pan_or_scale)
-                                     -where [x_scale(v) = v.transform().dx,  pan_or_scale(e) = e.shiftKey ? scale(e) : pan(e),
-                                             y_scale(v) = v.transform().dy,  scale(e)        = v.transform(v.transform() /!base |-plus| times(v.transform() /!d, {x: e.dx, y: e.dy}))],
+    default_zoom_transform                         = [0, 0] /!translate,
+    default_ring_view_transform(surface_transform) = surface_transform / x_arctangent /-composite/ polar,
 
-    using [caterwaul.vector(2, 'v')]]});
+    default_interaction(canvas, v) = drag_events(canvas).on('splunge_drag_delta', pan_or_scale).modus("jQuery(this).data('splunge_viewport')".qf,
+                                                                                                      "jQuery(this).data('splunge_viewport', _).trigger('splunge_render', _)".qf).val(v)
+
+                                     -where [self = jQuery(canvas),                                pan(d)   = "_.change_offset(unview(d.p1), unview(d.p2))".qf /!change,
+                                             pan_or_scale(e, d) = e.shiftKey ? scale(d) : pan(d),  scale(d) = "_.change_scale (unview(d.p1), unview(d.p2))".qf /!change,
+
+                                             change(f) = self.val(f(self.val())),
+                                             unview(v) = self.val().view().inverse().transform(v)]],  using [caterwaul.vector(2, 'v')]});
