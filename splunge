@@ -1849,26 +1849,26 @@ visible. In either case, you need a way to infer properties of some elements fro
 happens automatically with list structures, which have the property that if xs.rest() = y, then xs.bound() contains y.bound().
 
   Transformation and traversal.
-  List data is designed to be transformed incrementally. Traversal is expressed as a lazy reduction. For example:
+  List data is designed to be transformed incrementally. Traversal is expressed as a lazy left reduction with a lazily-computed rightmost value. For example:
 
-  | length(s)   = s.reduce(0, given[x, rest][1 + rest()])       // this forces the whole list
-    identity(s) = s.reduce(null, cons)                          // null marks the end of a list
+  | length(s)   = s.reduce(k(0), given[x, rest][1 + rest()])       // this forces the whole list
+    identity(s) = s.reduce(k(null), cons)                          // null marks the end of a list
 
   Any object that supports the reduce(x, f) and bound() methods can be rendered as a graph element. Cons cells as defined here do not have enough information to be rendered safely if they are infinite,
-  though they will work just fine (albeit inefficiently) for small finite datasets.
+  though they will work just fine (albeit inefficiently) for small finite datasets. You should use bounded(), x_shadow(), or y_shadow() for large or infinite data sets.
 
   cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /[null][cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x].concat(rest())]),
-  k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),        reduce(xs, x_fn, f) = xs && xs.reduce(x_fn, f),
+  k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),        reduce(xs, x_fn, f) = xs ? xs.reduce ? xs.reduce(x_fn, f) : f(xs, x_fn) : x_fn(),
 
   cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, null] -se- it.prototype /-$.merge/
-              capture [reduce(x, f, r = this.rest) = f(this.first, r ? "r().reduce(x, f)".qf : x),  transform_with(t) = map("_.transform_with(t)".qf, this),
-                                                                                                    bound()           = bound_everything],
+              capture [reduce(x, f, r = this.rest) = f(this.first, "rest ? rest.reduce(x, f) : x, where [rest = r()]".qf),  transform_with(t) = map("_.transform_with(t)".qf, this),
+                                                                                                                            bound()           = bound_everything],
 
   map(f, xs)    = reduce(xs, null /!k, given[x, rest] [cons(f(x), rest)]),               append(xs, ys_f) = xs ? xs.reduce(ys_f, cons) : ys_f(),
   filter(f, xs) = reduce(xs, null /!k, given[x, rest] [f(x) ? cons(x, rest) : rest()]),  each(f, xs)      = reduce(xs, xs /!k, given[x, rest] [f(x), rest()]),
 
   take_while(f, xs)    = reduce(xs, null /!k, given[x, rest] [f(x) ? cons(x, rest) : null]),
-  descend_while(f, xs) = !xs || xs.reduce ? reduce(xs, null /!k, given[x, rest] [take_while(f, descend_while(f, xs)) /-append/ take_while(f, "descend_while(f, rest())".qf)]) : xs,
+  descend_while(f, xs) = !xs || xs.reduce ? reduce(take_while(f, xs), null /!k, given[x, rest] [descend_while(f, x) /-append/ rest]) : list(xs),
 
   Artificial bounding.
   This is used as a workaround for indefinite hierarchies that arise from laziness. We need a way to find the bounding box of a potentially infinite list of items. Instead of blocking until we know the

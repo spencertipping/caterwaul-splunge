@@ -331,9 +331,12 @@ return reduce(c, [] , (function(x,rest) {return[x] .concat(rest() ) } ) ) } ,k=f
 return function() {;
 return x} } ,list=function() {var xs=arguments;
 return cons_from_array(Array.prototype.slice.call( (xs) ) ) } ,reduce=function(xs,x_fn,f) {;
-return xs&&xs.reduce(x_fn,f) } ,cons_ctor= (function(it) {return $.merge(it.prototype, {reduce:function(x,f) {var r=this.rest;
-return f(this.first,r?function(_) {return r() .reduce(x,f) } 
-:x) } ,transform_with:function(t) {;
+return xs?xs.reduce?xs.reduce(x_fn,f) 
+:f(xs,x_fn) 
+:x_fn() } ,cons_ctor= (function(it) {return $.merge(it.prototype, {reduce:function(x,f) {var r=this.rest;
+return f(this.first,function(_) {return(function() {var rest=r() ;
+return rest?rest.reduce(x,f) 
+:x} ) .call(this) } ) } ,transform_with:function(t) {;
 return map(function(_) {return _.transform_with(t) } ,this) } ,bound:function() {;
 return bound_everything} } ) ,it} ) .call(this, ( (function(first,rest_fn) {return this.first=first,this.rest=rest_fn,null} ) ) ) ,map=function(f,xs) {;
 return reduce(xs,k(null) , (function(x,rest) {return cons(f(x) ,rest) } ) ) } ,append=function(xs,ys_f) {;
@@ -344,8 +347,8 @@ return reduce(xs,k(null) , (function(x,rest) {return f(x) ?cons(x,rest)
 return reduce(xs,k(xs) , (function(x,rest) {return f(x) ,rest() } ) ) } ,take_while=function(f,xs) {;
 return reduce(xs,k(null) , (function(x,rest) {return f(x) ?cons(x,rest) 
 :null} ) ) } ,descend_while=function(f,xs) {;
-return!xs||xs.reduce?reduce(xs,k(null) , (function(x,rest) {return append(take_while(f,descend_while(f,xs) ) ,take_while(f,function(_) {return descend_while(f,rest() ) } ) ) } ) ) 
-:xs} ,bounded=function(s,box) {;
+return!xs||xs.reduce?reduce(take_while(f,xs) ,k(null) , (function(x,rest) {return append(descend_while(f,x) ,rest) } ) ) 
+:list(xs) } ,bounded=function(s,box) {;
 return{bound:function() {;
 return box} ,reduce:function(x,f) {;
 return f(s,x) } } } ,x_shadow=function(s,bound) {;
