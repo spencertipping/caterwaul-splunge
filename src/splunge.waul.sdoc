@@ -51,83 +51,61 @@ transformations.
     chart_objects = stack(data /pairs *[rectangle(x[0], [0, 0], [1, x[1]])] -seq, [0, 1]),
 
   The stack() function accumulates an offset from the dot product of the given vector and the bounding box offset of each entry. In this case we specified the vector [0, 1], so stacking proceeds
-  vertically. You can also use it to stack descendants, though if your charts are large you will want to consider using lazy_stack().
+  vertically. You can also use it to stack descendants, though if your charts are large or infinite you will want to consider using lazy_stack().
 
-  rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,
-  box(v, dv)   = new box_ctor(v, dv),
-  translate(v) = new box_ctor(v, [1, 1]),
-  box_ctor     = given[v, dv][this.v = v, this.dv = dv]
-                 -se- it.prototype /-$.merge/ capture [area()            = this.dv[0] * this.dv[1],               plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),
-                                                       interpolate(b, x) = this.scale(1 - x) /~plus/ b.scale(x),  scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),
-                                                       transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,   inverse() = box(this.v /-vscale/ -1, [1 / this.dv[0], 1 / this.dv[1]]),
+  box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-1/0, -1/0], [1/0, 1/0]),
+  rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([   0,    0], [  0,   0]),
 
-                                                       bound()           = this,
-                                                       intersect(b)      = this /~map_corners/ "b /~intern/ _".qf,
-                                                       union(b)          = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
-                                                                                                            c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
+  box_ctor   = given[v, dv][this.v = v, this.dv = dv]
+               -se- it.prototype /-$.merge/ capture [area()            = this.dv[0] * this.dv[1],               plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),
+                                                     interpolate(b, x) = this.scale(1 - x) /~plus/ b.scale(x),  scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),
+                                                     transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,   inverse() = box(this.v /-vscale/ -1, [1 / this.dv[0], 1 / this.dv[1]]),
+                                                                                                                times(v)  = box(this.v, v /-vtimes/ this.dv),
 
-                                                       intern(v)         = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,
-                                                       transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
-                                                       contains(v)       = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
-                                                       map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)]],
+                                                     bound()      = this,  intersect(b) = this /~map_corners/ "b /~intern/ _".qf,
+                                                                           union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
+                                                                                                                           c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
+                                                     transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
+                                                     intern(v)         = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,
+                                                     contains(v)       = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
+                                                     map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)]],
 
 Infinite data sets.
 You can render and interact with infinite data sets provided that you specify some limit on what gets rendered. Usually this involves either things being out of bounds or things being too small to be
-visible. In either case, you need a way to infer properties of some elements from properties of others; generally this means using a hierarchy and some kind of induction against that hierarchy. For
-example, stacked elements are monotonically increasing in the direction vector (we tacitly assume nonnegative vectors to make this possible). This means that we can ignore the "next" of any collection
-whose current item is invisible and whose vector dictates that further items are less visible.
-
-This kind of inductive logic is built into most of the chart element functions that Splunge provides. Specifically:
-
-| stack(xs, v)                        assumes that v · xs[i] ≤ v · xs[i+1]
-  hierarchy(xs, children_fn, vs, vc)  assumes stack(xs, vs) and stack(children_fn(xs[i]), vc) ∀i
-
-The problem with stack() is that it eagerly evaluates its children. If you want to build an infinite series of values, you'll need to delay part of the evaluation; this can be done using lazy_stack().
-lazy_stack() is an unfolding function that produces values as needed, but not eagerly. If asked for a bounding box, it returns an object whose dimensions are infinite along any nonzero axes of its
-vector; this is a conservative approximation given that no further information is known. For example, here's a lazy_stack() of random numbers:
-
-| rectangle_for_number(n) = rectangle(n, [0, 0], [1, n]),
-  infinite_stack() = lazy_stack(rectangle_for_number(Math.random()), "infinite_stack()".qf, [0, 1])
-
-Lazy stacks obey the following:
-
-| lazy_stack(x, f, v).first() = x
-  lazy_stack(x, f, v).next()  = lazy_stack(f(x), f, v)
-
-Lazy stack bounds are not always accurate in certain cases. In particular, the first object in the lazy stack is assumed to shadow all other objects in the axis perpendicular to v. For example, suppose
-you have a horizontal line of boxes, so v = [1, 0]. The lazy stack assumes that the first object in the stack is taller than anything to its right, and that nothing to its right falls below it; this
-assumption is observable by the fact that the bounding box is infinitely wide, but only accounts for the vertical aspect of the first object.
-
-Note that lazy stacks don't store the values that come from next() by default. This means that the random number example above would render differently each time. In order to fix this, you should use a
-persistent_lazy_stack(), which does cache its next() value:
-
-| infinite_stack = persistent_lazy_stack(rectangle_for_number(Math.random()), "infinite_stack()".qf, [0, 1])
-
-AJAX loading is another case where this distinction matters. You don't know whether a backgrounded AJAX load will complete before its data is requested, so you want to use a regular lazy_stack() to allow
-for mutability (a persistent_lazy_stack() would remember a cache miss and not give you a chance to insert the correct data).
+visible. In either case, you need a way to infer properties of some elements from properties of others; generally this means using a hierarchy and some kind of induction against that hierarchy. This
+happens automatically with list structures, which have the property that if xs.rest() = y, then xs.bound() contains y.bound().
 
   Transformation and traversal.
-  Stacked data is designed to be transformed incrementally. Traversal is expressed as a lazy reduction. For example:
+  List data is designed to be transformed incrementally. Traversal is expressed as a lazy reduction. For example:
 
-  | length(s)            = s.reduce(0, given[x, rest][1 + rest()])
-    depth_first(s, rest) = s.reduce(false, given[x, rest][this.cons(x, x.reduce ? "x.reduce(rest, depth_first)"
+  | length(s)   = s.reduce(0, given[x, rest][1 + rest()])       // this forces the whole list
+    identity(s) = s.reduce(null, cons)                          // null marks the end of a list
 
-  stack(xs, v)                   = array_stack(xs, 0, v),
-  stack_object(o, v)             = o /-$.merge/ capture [transform_with(t)             = transformed_stack(this, t),
-                                                         cons(first, next_fn)          = capture [first() = first, next = next_fn || "o".qf] /-lazy_stack_object/ v,
-                                                         append(s, n = this.next())    = this.reduce(s, this.cons),
-                                                         reduce(x, f, n = this.next()) = f.call(this, this.first(), n ? "n.reduce(arguments.length === 1 ? _ : x, f)".qf
-                                                                                                                      : "arguments.length === 1 ? _ : x".qf)],
-  lazy_stack_object(o, v)        = stack_object(o, v) /-$.merge/
-                                   capture [bound(b = this.first().bound(), n = this.next_) = n ? b /~union/ n.bound() : n === false ? b : b.v /-box/ [v[0]/0 || b.dv[0], v[1]/0 || b.dv[1]]],
+  Any object that supports the reduce(x, f) and bound() methods can be rendered as a graph element. Cons cells as defined here do not have enough information to be rendered safely if they are infinite,
+  though they will work just fine (albeit inefficiently) for small finite datasets.
 
-  array_stack(xs, i, v)          = capture [first() = xs[i],  bound(b = this.first().bound(), n = this.next()) = this.bound_ -dcq [n ? b.union(n.bound()) : b],
-                                            next()  = this.next_ -dcq- array_stack(xs, i + 1, v)
-                                                                       /~transform_with/ translate(v |-vscale| this.first().bound().dv /-vdot/ v) -when [i < xs.length]] /-stack_object/ v,
+  cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs) = xs /[null][cons(x, k(x0))] -seq,  cons_to_array(c) = c.reduce([], given[x, rest] [[x].concat(rest())]),
 
-  transformed_stack(s, t)        = s && capture [first() = s.first().transform_with(t),  next() = transformed_stack(s.next(), t),  bound() = s.bound().transform_with(t)] /-stack_object/ v,
-  lazy_stack(x, f, v)            =      capture [first() = x,                            next() = f(x)]                  /-lazy_stack_object/ v,
-  persistent_lazy_stack(x, f, v) =      capture [first() = x,                            next() = this.next_ -dcq- f(x)] /-lazy_stack_object/ v,
+  cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn] -se- it.prototype /-$.merge/ capture [reduce(x, f, r = this.rest) = f(this.first, r ? "r.reduce(x, f)".qf : x),
+                                                                                                                   transform_with(t)           = map("_.transform_with(t)".qf, this),
+                                                                                                                   bound()                     = bound_everything],
+  k(x)()        = x,
+  map(f, xs)    = xs.reduce(null /!k, given[x, rest] [cons(f(x), rest)]),               append(xs, ys_f) = xs === null ? ys_f() : xs.reduce(ys_f, cons),
+  filter(f, xs) = xs.reduce(null /!k, given[x, rest] [f(x) ? cons(x, rest) : rest()]),  each(f, xs)      = xs.reduce(xs   /!k, given[x, rest] [f(x), rest()]),
+
+  take_while(f, xs)    = xs.reduce(null /!k, given[x, rest] [f(x) ? cons(x, rest) : null]),
+  descend_while(f, xs) = xs.reduce ? xs.reduce(null /!k, given[x, rest] [take_while(f, descend_while(f, k(x)) /-append/ "descend_while(f, rest())".qf)]) : x,
+
+  Artificial bounding.
+  This is used as a workaround for indefinite hierarchies that arise from laziness. We need a way to find the bounding box of a potentially infinite list of items. Instead of blocking until we know the
+  answer definitely, we sidestep the problem by saying that the data we care about is clipped to a box that has at most one infinite dimension. This lets us, for example, have an infinitely tall stack of
+  things that is known to have a specified finite width. When the infinite tower is panned horizontally offscreen, none of it needs to be rendered because we know no element can escape the bounding box.
+
+  You can use the bounded() function to introduce a bounding box onto an object, usually a cons cell, whose bounding box is too large or unknown. This bounding box will be used to figure out when we can
+  skip rendering for a particular element. You'll probably use x_stack() and y_stack() more often.
+
+  bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [1/0, 1]),  x_stack(xs) = x_shadow(xs, xs.first.bound()),
+                                                                      y_shadow(s, bound) = bounded(s, bound /~times/ [1, 1/0]),  y_stack(xs) = y_shadow(xs, xs.first.bound()),
 
 Rendering.
 The most important/difficult aspect of rendering is drawing the paths that represent objects. These functions do that for you, at the same time using some optimizations to avoid rendering elements that
@@ -138,19 +116,17 @@ When this happens depends on the view transform. If something like the arctangen
 from the focal point increases. Using a minimal-area heuristic is ideal for situations like this, and it also covers the usual clipping case.
 
 If you are using polar coordinate transformations within a rectangular viewport (e.g. a canvas), you'll want to use arc_bound() to accurately compute the visible bounding box of an arc. This is necessary
-because the polar coordinate transformation does not preserve rectangular structure. arc_bound(b) will return the rectangular boundaries of the polar-coordinate bounding box specified by b. So your
-render function might look like this:
+because the polar coordinate transformation does not preserve rectangular structure. arc_bound(b) will return the rectangular boundaries of the polar-coordinate bounding box specified by b. For example:
 
-| draw_arc(b) = context.beginPath() -then- arc_path(b, context) -then- context.fill(),
-  viewport_bound = box([-200, -200], [400, 400]),
-  each_when("arc_bound(_).intersect(viewport_bound).area() > 0.01".qf)(my_data, when_data(draw_arc))
+| viewport_bounds = box([-200, -200], [400, 400]),
+  draw(path)(box) = my_context.beginPath() -then- path(box, my_context) -then- my_context.fill(),
+  render(data)    = each(draw(arc_path), descendants_while("_.intersect(viewport_bounds).area() > 0.01".qf, data))
 
-Using each_when() like this will exploit bound transitivity so that you can render infinitely large datasets. If your render function returns false for some object, that object's siblings (stack-wise)
-will not be rendered. It isn't a problem if your function returns undefined, as above.
+Using descendants_while() like this will exploit bound transitivity so that you can render infinitely large datasets. each() is required to force the resulting list. If your data consists of elements
+constructed via rectangle(), then each box passed to draw(arc_path)() will have a .data attribute corresponding to the first argument to rectangle().
 
-  when_data(f)(x)       = x.data === void 0 || f.apply(this, arguments),  rectangle_path(b, c) = c.rect(b.v[0], b.v[1], b.v[0] + b.dv[0], b.v[1] + b.dv[1]),
-  each_when(cond)(s, f) = s /~each/ "f(_) -when- cond(_)".qf,             arc_path(b, c)       = c.save() -then- c.rotate(b.v[1]) -then- c.arc(0, 0, b.v[0], 0, b.dv[1]) -then-
-                                                                                                 c.arc(0, 0, b.v[0] + b.dv[0], b.dv[1], 0, true) -then- c.lineTo(b.v[0], 0) -then- c.restore(),
+  rectangle_path(b, c) = c.rect(b.v[0], b.v[1], b.v[0] + b.dv[0], b.v[1] + b.dv[1]),
+  arc_path(b, c)       = c.save() -then- c.rotate(b.v[1]) -then- c.arc(0, 0, b.v[0], 0, b.dv[1]) -then- c.arc(0, 0, b.v[0] + b.dv[0], b.dv[1], 0, true) -then- c.lineTo(b.v[0], 0) -then- c.restore(),
 
   arc_bound(b, p = b /~transform_with/ inverse_polar, cp1 = polar /~transform/ [p.v[0], p.v[1] + p.dv[1]], cp2 = polar /~transform/ [p.v[0] + p.dv[0], p.v[1]]) = b /~union/ box(cp1, cp2),
 
@@ -173,31 +149,17 @@ these pieces can be changed. For a ring chart, for example, the transformations 
 
   This paradigm allows you to do things like bookmark previous viewports, including the immutable data they pointed to as well as the immutable zoom and view transformations.
 
+  cosine_tween(x)            = Math.cos(x * Math.PI) * -0.5 + 0.5,
   viewport(data, zoom, view) = capture [transformed_data()           = data /~transform_with/ zoom /~transform_with/ view,           with_zoom(z) = viewport(data, z, view),
                                         animate(to, duration, tween) = animation(this, to, duration || 400, tween || cosine_tween),  with_data(d) = viewport(d, zoom, view),
+                                        find(v)                      = descend_while("_.bound().contains(v)".qf).first,              zoom() = zoom,  view() = view,  data() = data,
 
-                                        zoom() = zoom,  view() = view,  data() = data,
-                                        find(v) = data.find("_.data !== void 0 ? _.bound().contains(v) : _.bound().contains(v)
+                                        interpolate(v, x)            = this /~with_zoom/ zoom.interpolate(v.zoom(), x)],
 
-                                        scale(x) = this.with_zoom(zoom /~scale/ x),
-                                        ],
+  animation(v1, v2, duration, tween) = capture [start         = +new Date,                     viewport()            = v1.interpolate(v2, this.factor()),
+                                                is_complete() = +new Date - start > duration,  factor(t = +new Date) = 1 /-Math.min/ tween((t - start) / duration)],
 
-  animation(v1, v2, 
-
-  Animation functions.
-  This simplifies viewport creation. Chances are, you want to give the user a way to pan around the graph, zoom to particular segments, etc. This interface lets you do that without introducing too much
-  conceptual overhead. In particular, it encapsulates animations. The second argument passed to the viewport() function is a callback that will be invoked on the transform each time it is changed during
-  an animation.
-
-  cosine(x)                   = Math.cos(x * Math.PI) * -0.5 + 0.5,    // Tween function, not an alias to Math.cos()
-  viewport(initial, f)        = wcapture [_transform = initial,  stop()                      = clearInterval(_interval) -then [_interval = null] -when._interval,
-                                          _interval  = null,     animate(t, duration, tween) = stop() <then> _interval -eq- interpolator(_transform, t, +new Date,
-                                                                                                                                         duration || 400, tween || cosine) /-setInterval/ 40,
-                                                                 transform(t)                                 = t ? f(_transform = t) : _transform,
-                                                                 interpolator(s, t, c, d, i)(now = +new Date) = stop() -then- now /eq[c + d] -when [now > c + d] <then>
-                                                                                                                interpolate(s, t, i((now - c) / d)) /!transform],
-
-  default_viewport(canvas, t) = t /or.{x0: 0, dx: 1, y0: 0, dy: 1} /-viewport/ default_renderer(canvas),
+  // TODO: fix interaction stuff below
 
   Interaction.
   You can set up any kind of interaction model you want to, but Splunge provides some defaults that allow the user to pan around the data, change zoom levels, and select nodes. These actions are emitted
