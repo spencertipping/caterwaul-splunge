@@ -6,13 +6,15 @@
   <script src='caterwaul.ui.min.js'></script>
   <script>
     $(caterwaul(':all')(function () {
-      s.default_interaction($('#splunge-test'), s.viewport(data, s.default_zoom_transform, s.default_ring_view_transform([0, 0] /-s.box/ [400, 290]))).on('splunge_render', redraw),
+      s.default_interaction($('#splunge-test'), s.viewport(data, s.default_zoom_transform, s.default_ring_view_transform)).on('splunge_render', redraw),
 
       where [s              = caterwaul.splunge,
-             context        = $('#splunge-test')[0].getContext('2d') -se [it.fillStyle = 'green'],
-             redraw()       = context.clearRect(0, 0, $(this).width(), $(this).height()) -then- s.each(draw_arc, s.descend_while("_.bound().area() > 0.01".qf, $(this).val().data())),
-             draw_arc(data) = console.log(data) -then- context.beginPath() -then- s.arc_path(data, context) -then- context.fill(),
-             data           = s.list(s.rectangle('foo', [0, 0], [1, 2]), s.rectangle('bar', [0, 2], [1, 1]))]}))
+             view_transform = [-200, -195] /-s.box/ [400, 290],
+             context        = $('#splunge-test')[0].getContext('2d') -se [it.fillStyle = 'green', it.strokeStyle = 'red'],
+             redraw()       = context.clearRect(0, 0, $(this).width(), $(this).height()) -then- s.each(draw_arc, s.descend_while("true || _.bound().area() > 0.01".qf, $(this).val().transformed_data())),
+             draw_arc(data) = context.save() -then- s.transform_to_box(view_transform, context) -then- context.beginPath() -then- s.arc_path(data, context)
+                              -then- context.closePath() -then- context.fill() -then- context.restore(),
+             data           = s.list(s.rectangle('foo', [0.1, 1], [1, 1.1]))]}))
   </script>
 </head>
 <body style='margin:0'>

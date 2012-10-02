@@ -54,16 +54,16 @@ for(var x0= (null) ,xi=0,xl=xs.length;
 xi<xl;
  ++xi)x=xs[xi] ,x0= (cons(x,k(x0) ) ) ;
 return x0} ) .call(this,xs) } ,cons_to_array=function(c) {;
-return reduce(c, [] , (function(x,rest) {return[x] .concat(rest() ) } ) ) } ,k=function(x) {;
+return reduce(c, [] , (function(x,rest) {return( [x] ) .concat(rest() ) } ) ) } ,k=function(x) {;
 return function() {;
 return x} } ,list=function() {var xs=arguments;
 return cons_from_array(Array.prototype.slice.call( (xs) ) ) } ,reduce=function(xs,x_fn,f) {;
 return xs?xs.reduce?xs.reduce(x_fn,f) 
 :f(xs,x_fn) 
-:x_fn() } ,cons_ctor= (function(it) {return $.merge(it.prototype, {reduce:function(x,f) {var r=this.rest;
+:x_fn() } ,cons_ctor= (function(it) {return $.merge(it.prototype, {reduce:function(x_fn,f) {var r=this.rest;
 return f(this.first,function(_) {return(function() {var rest=r() ;
-return rest?rest.reduce(x,f) 
-:x} ) .call(this) } ) } ,transform_with:function(t) {;
+return rest?rest.reduce(x_fn,f) 
+:x_fn() } ) .call(this) } ) } ,transform_with:function(t) {;
 return map(function(_) {return _.transform_with(t) } ,this) } ,bound:function() {;
 return bound_everything} } ) ,it} ) .call(this, ( (function(first,rest_fn) {return this.first=first,this.rest=rest_fn,null} ) ) ) ,map=function(f,xs) {;
 return reduce(xs,k(null) , (function(x,rest) {return cons(f(x) ,rest) } ) ) } ,append=function(xs,ys_f) {;
@@ -81,9 +81,9 @@ return box} ,reduce:function(x,f) {;
 return f(s,x) } } } ,x_shadow=function(s,bound) {;
 return bounded(s, (bound) .times( [1/0,1] ) ) } ,y_shadow=function(s,bound) {;
 return bounded(s, (bound) .times( [1,1/0] ) ) } ,x_compressed=function(xs,h) {;
-return(xs) .transform_with(scale( [h/xs.reduce(0, (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,x_stack=function(xs) {;
+return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,x_stack=function(xs) {;
 return x_shadow(xs,xs.first.bound() ) } ,y_compressed=function(xs,h) {;
-return(xs) .transform_with(scale( [h/xs.reduce(0, (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,y_stack=function(xs) {;
+return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,y_stack=function(xs) {;
 return y_shadow(xs,xs.first.bound() ) } ,rectangle_path=function(b,c) {;
 return c.rect(b.v[0] ,b.v[1] ,b.v[0] +b.dv[0] ,b.v[1] +b.dv[1] ) } ,arc_path=function(b,c) {;
 return( ( ( ( (c.save() ,c.rotate(b.v[1] ) ) ,c.arc(0,0,b.v[0] ,0,b.dv[1] ) ) ,c.arc(0,0,b.v[0] +b.dv[0] ,b.dv[1] ,0,true) ) ,c.lineTo(b.v[0] ,0) ) ,c.restore() ) } ,arc_bound=function(b) {var p= (b) .transform_with(inverse_polar) ;
@@ -113,8 +113,8 @@ return(record(e.pageX,e.pageY) , ( ($doc) .mousemove(drag) ) .mouseup(stop_dragg
 return $doc.unbind( 'mousemove' ,drag) .unbind( 'mouseup' ,stop_dragging) } ,drag=function(e) {;
 return(function() {var o=self.offset() ,x=o.left,y=o.top;
 return(self.trigger( 'splunge_drag_delta' , {p1: [last_x-x,last_y-y] ,p2: [e.pageX-x,e.pageY-y] } ) ,record(e.pageX,e.pageY) ) } ) .call(this) } ;
-return( !self.data( 'splunge_drag_delta_installed' ) &&self.mousedown(start_dragging) .data( 'splunge_drag_delta_installed' ,true) ,self) } ) .call(this) } ,default_zoom_transform=translate( [0,0] ) ,default_ring_view_transform=function(surface_transform) {;
-return composite(surface_transform,x_arctangent,polar) } ,default_interaction=function(canvas,v) {;
+return( !self.data( 'splunge_drag_delta_installed' ) &&self.mousedown(start_dragging) .data( 'splunge_drag_delta_installed' ,true) ,self) } ) .call(this) } ,transform_to_box=function(b,context) {;
+return(context.translate( -b.v[0] , -b.v[1] ) ,context.scale(b.dv[0] ,b.dv[1] ) ) } ,default_zoom_transform=translate( [0,0] ) ,default_ring_view_transform=composite(x_arctangent,polar) ,default_interaction=function(canvas,v) {;
 return(function() {var self=jQuery(canvas) ,pan=function(d) {;
 return change(function(_) {return _.change_offset(unview(d.p1) ,unview(d.p2) ) } ) } ,pan_or_scale=function(e,d) {;
 return e.shiftKey?scale(d) 
@@ -123,6 +123,6 @@ return change(function(_) {return _.change_scale(unview(d.p1) ,unview(d.p2) ) } 
 return self.val(f(self.val() ) ) } ,unview=function(v) {;
 return self.val() .view() .inverse() .transform(v) } ;
 return drag_events(canvas) .on( 'splunge_drag_delta' ,pan_or_scale) .modus(function(_) {return jQuery(this) .data( 'splunge_viewport' ) } ,function(_) {return jQuery(this) .data( 'splunge_viewport' ,_) .trigger( 'splunge_render' ,_) } ) .val(v) } ) .call(this) } ;
-return{tau:tau,atan_scale:atan_scale,scaled_atan:scaled_atan,clip:clip,id:id,scaled_tan:scaled_tan,componentwise:componentwise,x_tangent:x_tangent,x_arctangent:x_arctangent,y_tangent:y_tangent,y_arctangent:y_arctangent,inverse_polar:inverse_polar,polar:polar,composite:composite,box_ctor:box_ctor,box:box,translate:translate,bound_everything:bound_everything,rectangle:rectangle,scale:scale,bound_nothing:bound_nothing,cons:cons,cons_from_array:cons_from_array,cons_to_array:cons_to_array,k:k,list:list,reduce:reduce,cons_ctor:cons_ctor,map:map,append:append,filter:filter,each:each,take_while:take_while,descend_while:descend_while,bounded:bounded,x_shadow:x_shadow,y_shadow:y_shadow,x_compressed:x_compressed,x_stack:x_stack,y_compressed:y_compressed,y_stack:y_stack,rectangle_path:rectangle_path,arc_path:arc_path,arc_bound:arc_bound,cosine_tween:cosine_tween,viewport:viewport,animation:animation,drag_events:drag_events,default_zoom_transform:default_zoom_transform,default_ring_view_transform:default_ring_view_transform,default_interaction:default_interaction} } ) .call(this) } ) .call(this) } ) ;
+return{tau:tau,atan_scale:atan_scale,scaled_atan:scaled_atan,clip:clip,id:id,scaled_tan:scaled_tan,componentwise:componentwise,x_tangent:x_tangent,x_arctangent:x_arctangent,y_tangent:y_tangent,y_arctangent:y_arctangent,inverse_polar:inverse_polar,polar:polar,composite:composite,box_ctor:box_ctor,box:box,translate:translate,bound_everything:bound_everything,rectangle:rectangle,scale:scale,bound_nothing:bound_nothing,cons:cons,cons_from_array:cons_from_array,cons_to_array:cons_to_array,k:k,list:list,reduce:reduce,cons_ctor:cons_ctor,map:map,append:append,filter:filter,each:each,take_while:take_while,descend_while:descend_while,bounded:bounded,x_shadow:x_shadow,y_shadow:y_shadow,x_compressed:x_compressed,x_stack:x_stack,y_compressed:y_compressed,y_stack:y_stack,rectangle_path:rectangle_path,arc_path:arc_path,arc_bound:arc_bound,cosine_tween:cosine_tween,viewport:viewport,animation:animation,drag_events:drag_events,transform_to_box:transform_to_box,default_zoom_transform:default_zoom_transform,default_ring_view_transform:default_ring_view_transform,default_interaction:default_interaction} } ) .call(this) } ) .call(this) } ) ;
 result.caterwaul_expression_ref_table= {e1: ( "caterwaul.vector(2, 'v' )" ) } ;
 return(result) } ) .call(this,caterwaul.vector(2, 'v' ) ) ) ;

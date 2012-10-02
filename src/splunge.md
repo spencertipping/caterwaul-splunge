@@ -88,12 +88,12 @@ List data is designed to be transformed incrementally. Traversal is expressed as
 Any object that supports the reduce(x, f) and bound() methods can be rendered as a graph element. Cons cells as defined here do not have enough information to be rendered safely if they are infinite,
 though they will work just fine (albeit inefficiently) for small finite datasets. You should use bounded(), x_shadow(), or y_shadow() for large or infinite data sets.
 
-    cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /[null][cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x].concat(rest())]),
+    cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /[null][cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x] /~concat/ rest()]),
     k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),        reduce(xs, x_fn, f) = xs ? xs.reduce ? xs.reduce(x_fn, f) : f(xs, x_fn) : x_fn(),
 
     cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, null] -se- it.prototype /-$.merge/
-                capture [reduce(x, f, r = this.rest) = f(this.first, "rest ? rest.reduce(x, f) : x, where [rest = r()]".qf),  transform_with(t) = map("_.transform_with(t)".qf, this),
-                                                                                                                              bound()           = bound_everything],
+                capture [reduce(x_fn, f, r = this.rest) = f(this.first, "rest ? rest.reduce(x_fn, f) : x_fn(), where [rest = r()]".qf),  transform_with(t) = map("_.transform_with(t)".qf, this),
+                                                                                                                                         bound()           = bound_everything],
 
     map(f, xs)    = reduce(xs, null /!k, given[x, rest] [cons(f(x), rest)]),               append(xs, ys_f) = xs ? xs.reduce(ys_f, cons) : ys_f(),
     filter(f, xs) = reduce(xs, null /!k, given[x, rest] [f(x) ? cons(x, rest) : rest()]),  each(f, xs)      = reduce(xs, xs /!k, given[x, rest] [f(x), rest()]),
@@ -112,8 +112,8 @@ skip rendering for a particular element. You'll probably use x_stack() and y_sta
 
     bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [1/0, 1]),  y_shadow(s, bound) = bounded(s, bound /~times/ [1, 1/0]),
 
-    x_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0, given[x, rest][x.bound()[0] + rest()]), 1]),  x_stack(xs) = x_shadow(xs, xs.first.bound()),
-    y_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0, given[x, rest][x.bound()[0] + rest()]), 1]),  y_stack(xs) = y_shadow(xs, xs.first.bound()),
+    x_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0 /!k, given[x, rest][x.bound()[0] + rest()]), 1]),  x_stack(xs) = x_shadow(xs, xs.first.bound()),
+    y_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0 /!k, given[x, rest][x.bound()[0] + rest()]), 1]),  y_stack(xs) = y_shadow(xs, xs.first.bound()),
 
 # Rendering
 
@@ -201,8 +201,9 @@ events give you the original pageX and pageY coordinates along with the points t
                                   drag(e)           = self.trigger('splunge_drag_delta', {p1: [last_x - x, last_y - y], p2: [e.pageX - x, e.pageY - y]}) -then- record(e.pageX, e.pageY)
                                                       -where [o = self.offset(), x = o.left, y = o.top]],
 
-    default_zoom_transform                         = [0, 0] /!translate,
-    default_ring_view_transform(surface_transform) = surface_transform / x_arctangent /-composite/ polar,
+    transform_to_box(b, context) = context.translate(-b.v[0], -b.v[1]) -then- context.scale(b.dv[0], b.dv[1]),
+    default_zoom_transform       = [0, 0] /!translate,
+    default_ring_view_transform  = x_arctangent /-composite/ polar,
 
     default_interaction(canvas, v) = drag_events(canvas).on('splunge_drag_delta', pan_or_scale).modus("jQuery(this).data('splunge_viewport')".qf,
                                                                                                       "jQuery(this).data('splunge_viewport', _).trigger('splunge_render', _)".qf).val(v)
