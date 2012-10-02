@@ -6,15 +6,12 @@
   <script src='caterwaul.ui.min.js'></script>
   <script>
     $(caterwaul(':all')(function () {
-      s.default_interaction($('#splunge-test'), s.viewport(data, s.default_zoom_transform, s.default_ring_view_transform)).on('splunge_render', redraw),
-
+      s.default_interaction($('#splunge-test').on('splunge_render', redraw), s.default_ring_viewport(data, {zoom: [0, 0] /-s.box/ [0.001, 0.001]}) -se [it.post_zoom = s.translate([0, 0])]),
       where [s              = caterwaul.splunge,
-             view_transform = [-200, -195] /-s.box/ [400, 290],
-             context        = $('#splunge-test')[0].getContext('2d') -se [it.fillStyle = 'green', it.strokeStyle = 'red'],
+             context        = $('#splunge-test')[0].getContext('2d') -se [it.fillStyle = 'green', it.strokeStyle = 'red', it.lineWidth = 0.001],
              redraw()       = context.clearRect(0, 0, $(this).width(), $(this).height()) -then- s.each(draw_arc, s.descend_while("true || _.bound().area() > 0.01".qf, $(this).val().transformed_data())),
-             draw_arc(data) = context.save() -then- s.transform_to_box(view_transform, context) -then- context.beginPath() -then- s.arc_path(data, context)
-                              -then- context.closePath() -then- context.fill() -then- context.restore(),
-             data           = s.list(s.rectangle('foo', [0.1, 1], [1, 1.1]))]}))
+             draw_arc(data) = context.save() -then- context.translate(400, 290) -then- context.scale(290, 290) -then- s.arc_path(data, context) -then- context.stroke() -then- context.restore(),
+             data           = s.cons_from_array(n[5] *[s.box([100, Math.sqrt(x)], [10, 5])] -seq)]}))
   </script>
 </head>
 <body style='margin:0'>
