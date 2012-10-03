@@ -135,7 +135,7 @@ Using descendants_while() like this will exploit bound transitivity so that you 
 constructed via rectangle(), then each box passed to draw(arc_path)() will have a .data attribute corresponding to the first argument to rectangle().
 
       rectangle_path(b, c) = c.rect(b.v[0], b.v[1], b.v[0] + b.dv[0], b.v[1] + b.dv[1]),
-      arc_path(b, c)       = c.save() -then- c.beginPath() -then- c.arc(0, 0, b.v[0], b.v[1], b.dv[1]) -then- c.arc(0, 0, b.v[0] + b.dv[0], b.v[1] + b.dv[1], 0, true) -then- c.closePath() -then- c.restore(),
+      arc_path(b, c)       = c.save() -then- c.arc(0, 0, b.v[0], b.v[1], b.dv[1]) -then- c.arc(0, 0, b.v[0] + b.dv[0], b.v[1] + b.dv[1], 0, true) -then- c.restore(),
 
       arc_bound(b, p = b /~transform_with/ inverse_polar, cp1 = polar /~transform/ [p.v[0], p.v[1] + p.dv[1]], cp2 = polar /~transform/ [p.v[0] + p.dv[0], p.v[1]]) = b /~union/ box(cp1, cp2),
 
@@ -166,14 +166,14 @@ This immutability allows you to store previous viewports (e.g. for bookmarking),
                              animate(to, duration, tween) = animation(this, to, duration || 400, tween || cosine_tween),             with_data(d) = viewport(d, this.zoom, this.post_zoom, this.view),
                              interpolate(v, x)            = this /~with_zoom/ this.zoom.interpolate(v.zoom, x),
 
-                             find(v, vi = this.view.inverse().transform(v)) = descend_while("_.bound().contains(vi)".qf, this.transformed_data()).first,
+                             find(v, vi = this.view.inverse().transform(v)) = descend_while("_.bound() /~contains/ vi".qf, this.transformed_data()).first,
 
                              change_offset(p1, p2) = this |~with_zoom| this.zoom /~transform_with/ translate(p1).inverse() /~transform_with/ translate(p2),
                              change_scale(p1, p2)  = this |~with_zoom| this.zoom /~transform_with/ scale    (p1).inverse() /~transform_with/ scale(p2)],
 
     cosine_tween(x)                    = Math.cos(x * Math.PI) * -0.5 + 0.5,
-    animation(v1, v2, duration, tween) = capture [start         = +new Date,                      viewport()            = v1.interpolate(v2, this.factor()),
-                                                  is_complete() = +new Date - start >= duration,  factor(t = +new Date) = 1 /-Math.min/ tween((t - start) / duration)],
+    animation(v1, v2, duration, tween) = capture [start         = +new Date,                      viewport() = v1.interpolate(v2, this.factor()),
+                                                  is_complete() = +new Date - start >= duration,  factor()   = 1 /-Math.min/ tween((+new Date - start) / duration)],
 
 ## Interaction
 
@@ -205,8 +205,8 @@ events give you the original pageX and pageY coordinates along with the points t
                                   drag(e)           = self.trigger('splunge_drag_delta', {p1: [last_x - x, last_y - y], p2: [e.pageX - x, e.pageY - y]}) -then- record(e.pageX, e.pageY)
                                                       -where [o = self.offset(), x = o.left, y = o.top]],
 
-    viewport_mapping(b, dv)     = box(b.v /-vtimes/ dv, b.dv /-vtimes/ dv),
-    default_ring_viewport(data) = viewport(data, [0, 0] /!translate, x_arctangent, polar),
+    viewport_mapping(b, dv)              = box(b.v /-vtimes/ dv, b.dv /-vtimes/ dv),
+    default_ring_viewport(data, options) = viewport(data, options.zoom || [0, 0] /!translate, x_arctangent, polar),
 
     default_interaction(canvas, v) = drag_events(canvas).on('splunge_drag_delta', pan_or_scale).modus("jQuery(this).data('splunge_viewport')".qf,
                                                                                                       "jQuery(this).data('splunge_viewport', _).trigger('splunge_render')".qf).val(v)

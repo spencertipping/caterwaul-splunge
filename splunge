@@ -1803,8 +1803,8 @@ Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the p
 can use the polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a scale(x, x) transformation to
 make it fit inside a 2x by 2x box centered at the origin.
 
-  tau = Math.PI * 2,  atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
-                      id(x)      = x,            scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
+  tau     = Math.PI * 2,            atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
+  epsilon = 3.1415926535897932e-8,  id(x)      = x,            scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
 
   x_tangent     = capture [transform = componentwise(scaled_tan, id), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, id), inverse() = x_tangent],
   y_tangent     = capture [transform = componentwise(id, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise(id, scaled_atan), inverse() = y_tangent],
@@ -1902,7 +1902,7 @@ Using descendants_while() like this will exploit bound transitivity so that you 
 constructed via rectangle(), then each box passed to draw(arc_path)() will have a .data attribute corresponding to the first argument to rectangle().
 
   rectangle_path(b, c) = c.rect(b.v[0], b.v[1], b.v[0] + b.dv[0], b.v[1] + b.dv[1]),
-  arc_path(b, c)       = c.save() -then- c.beginPath() -then- c.arc(0, 0, b.v[0], b.v[1], b.dv[1]) -then- c.arc(0, 0, b.v[0] + b.dv[0], b.v[1] + b.dv[1], 0, true) -then- c.closePath() -then- c.restore(),
+  arc_path(b, c)       = c.save() -then- c.arc(0, 0, b.v[0], b.v[1], b.dv[1]) -then- c.arc(0, 0, b.v[0] + b.dv[0], b.v[1] + b.dv[1], 0, true) -then- c.restore(),
 
   arc_bound(b, p = b /~transform_with/ inverse_polar, cp1 = polar /~transform/ [p.v[0], p.v[1] + p.dv[1]], cp2 = polar /~transform/ [p.v[0] + p.dv[0], p.v[1]]) = b /~union/ box(cp1, cp2),
 
@@ -1921,7 +1921,7 @@ these pieces can be changed. For a ring chart, for example, the transformations 
   Viewport objects aren't mutable, but they do support animation. This is done using time-variant viewport interpolation. For example:
 
   | animation = start_viewport.animate(end_viewport, 400, cosine_tween),
-    i = setInterval("canvas.val(animation.viewport()), clearInterval(i) -when- animation.is_complete()".qf, 30)
+    i = setInterval("clearInterval(i) -when- animation.is_complete(), canvas.val(animation.viewport()).qf, 30)
 
   This immutability allows you to store previous viewports (e.g. for bookmarking), including the immutable data they pointed to as well as the immutable zoom and view transformations.
 
@@ -1938,7 +1938,7 @@ these pieces can be changed. For a ring chart, for example, the transformations 
 
   cosine_tween(x)                    = Math.cos(x * Math.PI) * -0.5 + 0.5,
   animation(v1, v2, duration, tween) = capture [start         = +new Date,                      viewport() = v1.interpolate(v2, this.factor()),
-                                                is_complete() = +new Date - start >= duration,  factor()   = 1 /-Math.min/ tween((+new Date - start) / duration)],
+                                                is_complete() = +new Date - start >= duration,  factor()   = tween(1 |-Math.min| (+new Date - start) / duration)],
 
   Interaction.
   You can set up any kind of interaction model you want to, but Splunge provides some defaults that allow the user to pan around the data, change zoom levels, and select nodes. These actions are emitted

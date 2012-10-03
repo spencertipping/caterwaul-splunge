@@ -86,7 +86,7 @@ return x_shadow(xs,xs.first.bound() ) } ,y_compressed=function(xs,h) {;
 return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,y_stack=function(xs) {;
 return y_shadow(xs,xs.first.bound() ) } ,rectangle_path=function(b,c) {;
 return c.rect(b.v[0] ,b.v[1] ,b.v[0] +b.dv[0] ,b.v[1] +b.dv[1] ) } ,arc_path=function(b,c) {;
-return( ( ( ( (c.save() ,c.beginPath() ) ,c.arc(0,0,b.v[0] ,b.v[1] ,b.dv[1] ) ) ,c.arc(0,0,b.v[0] +b.dv[0] ,b.v[1] +b.dv[1] ,0,true) ) ,c.closePath() ) ,c.restore() ) } ,arc_bound=function(b) {var p= (b) .transform_with(inverse_polar) ;
+return( ( (c.save() ,c.arc(0,0,b.v[0] ,b.v[1] ,b.dv[1] ) ) ,c.arc(0,0,b.v[0] +b.dv[0] ,b.v[1] +b.dv[1] ,0,true) ) ,c.restore() ) } ,arc_bound=function(b) {var p= (b) .transform_with(inverse_polar) ;
 var cp1= (polar) .transform( [p.v[0] ,p.v[1] +p.dv[1] ] ) ;
 var cp2= (polar) .transform( [p.v[0] +p.dv[0] ,p.v[1] ] ) ;
 return(b) .union(box(cp1,cp2) ) } ,viewport=function(data,zoom,post_zoom,view) {;
@@ -96,14 +96,14 @@ return viewport(this.data,z,this.post_zoom,this.view) } ,animate:function(to,dur
 return animation(this,to,duration||400,tween||cosine_tween) } ,with_data:function(d) {;
 return viewport(d,this.zoom,this.post_zoom,this.view) } ,interpolate:function(v,x) {;
 return(this) .with_zoom(this.zoom.interpolate(v.zoom,x) ) } ,find:function(v) {var vi=this.view.inverse() .transform(v) ;
-return descend_while(function(_) {return _.bound() .contains(vi) } ,this.transformed_data() ) .first} ,change_offset:function(p1,p2) {;
+return descend_while(function(_) {return(_.bound() ) .contains(vi) } ,this.transformed_data() ) .first} ,change_offset:function(p1,p2) {;
 return(this) .with_zoom( ( (this.zoom) .transform_with(translate(p1) .inverse() ) ) .transform_with(translate(p2) ) ) } ,change_scale:function(p1,p2) {;
 return(this) .with_zoom( ( (this.zoom) .transform_with(scale(p1) .inverse() ) ) .transform_with(scale(p2) ) ) } } ) ,it} ) .call(this, ( (function(data,zoom,post_zoom,view) {return this.data=data,this.zoom=zoom,this.post_zoom=post_zoom,this.view=view,null} ) ) ) ,cosine_tween=function(x) {;
 return Math.cos(x*Math.PI) * -0.5+0.5} ,animation=function(v1,v2,duration,tween) {;
 return{start: +new Date,viewport:function() {;
 return v1.interpolate(v2,this.factor() ) } ,is_complete:function() {;
-return+new Date-start>=duration} ,factor:function() {var t= +new Date;
-return Math.min(1,tween( (t-start) /duration) ) } } } ,drag_events=function(canvas) {;
+return+new Date-start>=duration} ,factor:function() {;
+return Math.min(1,tween( ( +new Date-start) /duration) ) } } } ,drag_events=function(canvas) {;
 return(function() {var last_x=0,last_y=0,dragging=false,last_selected=null,$doc=jQuery(document) ,self=jQuery(canvas) ,record=function(x,y) {;
 return(last_x=x,last_y=y) } ,start_dragging=function(e) {;
 return(record(e.pageX,e.pageY) , ( ($doc) .mousemove(drag) ) .mouseup(stop_dragging) ) } ,stop_dragging=function(e) {;
@@ -111,8 +111,8 @@ return $doc.unbind( 'mousemove' ,drag) .unbind( 'mouseup' ,stop_dragging) } ,dra
 return(function() {var o=self.offset() ,x=o.left,y=o.top;
 return(self.trigger( 'splunge_drag_delta' , {p1: [last_x-x,last_y-y] ,p2: [e.pageX-x,e.pageY-y] } ) ,record(e.pageX,e.pageY) ) } ) .call(this) } ;
 return( !self.data( 'splunge_drag_delta_installed' ) &&self.mousedown(start_dragging) .data( 'splunge_drag_delta_installed' ,true) ,self) } ) .call(this) } ,viewport_mapping=function(b,dv) {;
-return box(vtimes(b.v,dv) ,vtimes(b.dv,dv) ) } ,default_ring_viewport=function(data) {;
-return viewport(data,translate( [0,0] ) ,x_arctangent,polar) } ,default_interaction=function(canvas,v) {;
+return box(vtimes(b.v,dv) ,vtimes(b.dv,dv) ) } ,default_ring_viewport=function(data,options) {;
+return viewport(data,options.zoom||translate( [0,0] ) ,x_arctangent,polar) } ,default_interaction=function(canvas,v) {;
 return(function() {var self=jQuery(canvas) ,pan=function(d) {;
 return change(function(_) {return _.change_offset(unview(d.p1) ,unview(d.p2) ) } ) } ,pan_or_scale=function(e,d) {;
 return e.shiftKey?scale(d) 
