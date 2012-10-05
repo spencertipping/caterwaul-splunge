@@ -202,19 +202,19 @@ these pieces can be changed. For a ring chart, for example, the transformations 
   events give you the original pageX and pageY coordinates along with the points transformed into data-space.
 
   drag_events(canvas) = self.mousedown(start_dragging).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
-                        -where [last_x = 0, last_y = 0, dragging = false, last_selected = null, doc = jQuery(document), self = jQuery(canvas),
-                                record(x, y)      = last_x /eq.x -then- last_y /eq.y,
-                                start_dragging(e) = record(e.pageX, e.pageY) -then- doc /~mousemove/ drag /~mouseup/ stop_dragging,
-                                stop_dragging(e)  = doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
-                                drag(e)           = self.trigger('splunge_drag_delta', {shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey,
-                                                                                        p1: [last_x - x, last_y - y], p2: [e.pageX - x, e.pageY - y]}) -then- record(e.pageX, e.pageY)
-                                                    -where [o = self.offset(), x = o.left, y = o.top]],
+                        -where [sx = 0, sy = 0, start = null, last_selected = null, doc = jQuery(document), self = jQuery(canvas),
+                                setup_drag(x, y, v) = sx /eq.x -then- sy /eq.y -then- start /eq.v,
+                                start_dragging(e)   = setup_drag(e.pageX, e.pageY, self.val()) -then- doc /~mousemove/ drag /~mouseup/ stop_dragging,
+                                stop_dragging(e)    = doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
+                                drag(e)             = self.trigger('splunge_drag_delta', {shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey,
+                                                                                          start: start, p1: [sx - x, sy - y], p2: [e.pageX - x, e.pageY - y]})
+                                                      -where [o = self.offset(), x = o.left, y = o.top]],
 
   default_ring_viewport(data, canvas, options, options = options || {}, c = jQuery(canvas), w = c.width(), h = c.height(), ar = w / h) =
-               viewport(data, options.zoom || [0, 0] /!translate, polar_to_cartesian / translate([0.1, 0]) /-composite/ x_arctangent, options.logical_bound || [-ar / 2, -1 / 2] /-box/ [ar / w, 1 / h]),
+               viewport(data, options.zoom || [0, 0] /!translate, polar_to_cartesian, options.logical_bound || [-ar / 2, -1 / 2] /-box/ [ar / w, 1 / h]),
 
   default_interaction(canvas, v) = drag_events(canvas).on('splunge_drag_delta', pan_or_scale).modus("jQuery(this).data('splunge_viewport')".qf,
                                                                                                     "jQuery(this).data('splunge_viewport', _).trigger('splunge_render')".qf).val(v)
-                                   -where [self               = jQuery(canvas),               pan(d)    = "_.change_offset(d.p1 /!unview, d.p2 /!unview)".qf /!change,
-                                           pan_or_scale(e, d) = d.shift ? scale(d) : pan(d),  scale(d)  = "_.change_scale (d.p1 /!unview, d.p2 /!unview)".qf /!change,
-                                           change(f)          = self.val() /!f /!self.val,    unview(v) = self.val().logical_transform().transform(v)]],  using [caterwaul.vector(2, 'v')]});
+                                   -where [self               = jQuery(canvas),               pan(d)       = self.val(d.p1 /-unview/ d.start |-d.start.change_offset| d.p2 /-unview/ d.start),
+                                           pan_or_scale(e, d) = d.shift ? scale(d) : pan(d),  scale(d)     = self.val(d.p1 /-unview/ d.start |-d.start.change_scale|  d.p2 /-unview/ d.start),
+                                                                                              unview(v, d) = d.logical_transform().transform(v)]],  using [caterwaul.vector(2, 'v')]});
