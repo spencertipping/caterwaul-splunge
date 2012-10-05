@@ -1792,24 +1792,26 @@ incorrect render output.) In addition to transforming things forwards, they must
 transformation into logical space for event processing.
 
 Splunge comes with three transformations. One, the arctangent transform, is used to visually compress data along an axis. The axis that it transforms is compressed from (-∞, ∞) to (-1, 1), and
-monotonicity properties are preserved. Another is the polar transform, which converts two axes into magnitude and angle and is suitable for turning bar charts into ring charts. The third is bounding,
-which linearly transforms space such that some bounding box is mapped to the unit square. The typical nesting is x_arctangent(polar(zoom(data))), where the zoom step changes with user input (see
+monotonicity properties are preserved. Another is the cartesian_to_polar transform, which converts two axes into magnitude and angle and is suitable for turning bar charts into ring charts. The third is bounding,
+which linearly transforms space such that some bounding box is mapped to the unit square. The typical nesting is x_arctangent(cartesian_to_polar(zoom(data))), where the zoom step changes with user input (see
 "viewports").
 
 Transformations provide two methods, transform(v) and inverse(). t.inverse().inverse().transform(v) should be equivalent to t.transform(v), though t.inverse().transform(t.transform(v)) might not be
 equivalent to v in some cases.
 
-Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the polar coordinate transforms have Y components that vary from -π to π. This is deliberate. It's written this way so that you
-can use the polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a scale(x, x) transformation to
+Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the cartesian_to_polar coordinate transforms have Y components that vary from -π to π. This is deliberate. It's written this way so that you
+can use the cartesian_to_polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a scale(x, x) transformation to
 make it fit inside a 2x by 2x box centered at the origin.
 
-  tau     = Math.PI * 2,            atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
+  tau     = Math.PI * 2,            atan_scale = 1 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
   epsilon = 3.1415926535897932e-8,  id(x)      = x,            scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
 
-  x_tangent     = capture [transform = componentwise(scaled_tan, id), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, id), inverse() = x_tangent],
-  y_tangent     = capture [transform = componentwise(id, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise(id, scaled_atan), inverse() = y_tangent],
-  inverse_polar = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = polar],
-  polar         = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],                             inverse() = inverse_polar],
+  x_tangent          = capture [transform = componentwise(scaled_tan, id), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, id), inverse() = x_tangent],
+  y_tangent          = capture [transform = componentwise(id, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise(id, scaled_atan), inverse() = y_tangent],
+  polar_to_cartesian = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = cartesian_to_polar],
+  cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],                             inverse() = polar_to_cartesian],
+
+  bounding_box(b)    = capture [transform(v) = b /~intern/ v, inverse() = this],
 
   // Arguments to composite() are ordered like composed functions: composite(t1, t2, t3).transform(x) = t1.transform(t2.transform(t3.transform(x)))
   composite(ts = arguments) = capture [transform(v) = ts /[v][xs[xl - xi - 1].transform(x0)] -seq, inverse() = this.inverse_ -dcq- composite.apply(this, +ts *[x.inverse()] -seq) /se[it.inverse_ = this]],
@@ -1820,7 +1822,7 @@ represent a piece of chart data and the "box" function is used to represent data
 transformations.
 
   Representing data elements.
-  Each data element is a rectangle or series of rectangles that can later be transformed into polar coordinates to become arc slices. Each rectangle has arbitrary coordinates, though you'll probably want
+  Each data element is a rectangle or series of rectangles that can later be transformed into cartesian_to_polar coordinates to become arc slices. Each rectangle has arbitrary coordinates, though you'll probably want
   to use a layout function if you want to create a normal chart easily. For example, you can produce a one-ring pie chart by stacking rectangles of equal widths:
 
   | data = {foo: 3, bar: 5, bif: 2, baz: 6},
@@ -1891,9 +1893,6 @@ lazy data; see above). Under this assumption, we can stop rendering when the int
 When this happens depends on the view transform. If something like the arctangent transformation is used, then all space is theoretically visible, but it will become arbitrarily small as the distance
 from the focal point increases. Using a minimal-area heuristic is ideal for situations like this, and it also covers the usual clipping case.
 
-If you are using polar coordinate transformations within a rectangular viewport (e.g. a canvas), you'll want to use arc_bound() to accurately compute the visible bounding box of an arc. This is necessary
-because the polar coordinate transformation does not preserve rectangular structure. arc_bound(b) will return the rectangular boundaries of the polar-coordinate bounding box specified by b. For example:
-
 | viewport_bounds = box([-200, -200], [400, 400]),
   draw(path)(box) = my_context.beginPath() -then- path(box, my_context) -then- my_context.fill(),
   render(data)    = each(draw(arc_path), descend_while("_.intersect(viewport_bounds).area() > 0.01".qf, data))
@@ -1901,10 +1900,15 @@ because the polar coordinate transformation does not preserve rectangular struct
 Using descendants_while() like this will exploit bound transitivity so that you can render infinitely large datasets. each() is required to force the resulting list. If your data consists of elements
 constructed via rectangle(), then each box passed to draw(arc_path)() will have a .data attribute corresponding to the first argument to rectangle().
 
-  rectangle_path(b, c) = c.rect(b.v[0], b.v[1], b.v[0] + b.dv[0], b.v[1] + b.dv[1]),
-  arc_path(b, c)       = c.save() -then- c.arc(0, 0, b.v[0], b.v[1], b.dv[1]) -then- c.arc(0, 0, b.v[0] + b.dv[0], b.v[1] + b.dv[1], 0, true) -then- c.restore(),
+The arc_path() function is coded strangely, but it needs to be this way. Here's the story. If you're using arc_path to render your data, then you're rendering data whose coordinates are specified in
+polar form -- so your boxes are in the form [[rho, theta], [drho, dtheta]]. And if the user is going to interact with this meaningfully, you'll need to convert any mouse coordinates into polar form as
+well, so one of the view transformations will be polar_to_cartesian so that you get the inverse cartesian_to_polar operating on the mouse coordinates.
 
-  arc_bound(b, p = b /~transform_with/ inverse_polar, cp1 = polar /~transform/ [p.v[0], p.v[1] + p.dv[1]], cp2 = polar /~transform/ [p.v[0] + p.dv[0], p.v[1]]) = b /~union/ box(cp1, cp2),
+Well, one of the side-effects of having a view transformation is that your data will be transformed prior to being rendered: so all of those polar coordinates our data used to have will be converted to
+regular Cartesian coordinates via the polar_to_cartesian transform. However, the arc() method uses polar coordinates. So we undo the transformation right before rendering the arc.
+
+  rectangle_path(b, c)                                       = c.rect(b.v[0], b.v[1], b.dv[0], b.dv[1]),
+  arc_path(b, c, p = b /~transform_with/ cartesian_to_polar) = c.arc(0, 0, p.v[0], p.v[1], p.v[1] + p.dv[1], true) -then- c.arc(0, 0, p.v[0] + p.dv[0], p.v[1] + p.dv[1], p.v[1]),
 
 Viewports.
 Viewports help manage user interaction. This includes mouse input, some rendering details, maintaining a "current zoom", animation, and viewport-arc intersection. The result is a jQuery-wrapped <canvas>
@@ -1915,7 +1919,7 @@ these pieces can be changed. For a ring chart, for example, the transformations 
 
 | viewport(data = my_data,
            zoom_transform = translate([0, 0]),
-           view_transform = composite([-200, -200] /-box/ [400, 400], x_arctangent, polar))     // polar-transform coordinates, then compress x (distance), then map to screen coordinates
+           view_transform = composite(polar_to_cartesian, x_arctangent))
 
   Immutability and animation.
   Viewport objects aren't mutable, but they do support animation. This is done using time-variant viewport interpolation. For example:
@@ -1925,16 +1929,27 @@ these pieces can be changed. For a ring chart, for example, the transformations 
 
   This immutability allows you to store previous viewports (e.g. for bookmarking), including the immutable data they pointed to as well as the immutable zoom and view transformations.
 
-  viewport(data, zoom, post_zoom, view) = new viewport_ctor(data, zoom, post_zoom, view),
-  viewport_ctor = given[data, zoom, post_zoom, view] [this.data = data, this.zoom = zoom, this.post_zoom = post_zoom, this.view = view, null] -se- it.prototype /-$.merge/
-                  capture [transformed_data()           = this.data /~transform_with/ this.zoom /~transform_with/ this.post_zoom,  with_zoom(z) = viewport(this.data, z, this.post_zoom, this.view),
-                           animate(to, duration, tween) = animation(this, to, duration || 400, tween || cosine_tween),             with_data(d) = viewport(d, this.zoom, this.post_zoom, this.view),
-                           interpolate(v, x)            = this /~with_zoom/ this.zoom.interpolate(v.zoom, x),
+  Logical bounds and view transformations.
+  The canvas element does some transformations natively, which throws a monkey wrench into our model of transforming everything prior to rendering it. In particular, we lose too much information to
+  support things like nonzero origins for arc slices. Further, we always observe mouse event coordinates in pixel terms relative to the canvas corner, and we'll need a way to transform these back into
+  logical space. To this end, we separate the very last piece of the transformation, which I'm calling the "logical bounds" here. This transformation is a box that converts from screen coordinates to
+  logical ones, and it is used to generate the initial canvas context transformations that are set up prior to rendering.
 
-                           find(v, vi = this.view.inverse().transform(v)) = descend_while("_.bound() /~contains/ vi".qf, this.transformed_data()).first,
+  viewport(data, zoom, view, logical_bounds) = new viewport_ctor(data, zoom, view, logical_bounds),
+  viewport_ctor = given[data, zoom, view, logical_bounds] [this.data = data, this.zoom = zoom, this.view = view, this.logical_bounds = logical_bounds, null] -se- it.prototype /-$.merge/
+                  capture [transformed_data()           = this.data /~transform_with/ this.zoom /~transform_with/ this.view,  with_zoom(z)   = viewport(this.data, z, this.view, this.logical_bounds),
+                           animate(to, duration, tween) = animation(this, to, duration || 400, tween || cosine_tween),        with_data(d)   = viewport(d, this.zoom, this.view, this.logical_bounds),
+                           interpolate(v, x)            = this /~with_zoom/ this.zoom.interpolate(v.zoom, x),                 with_bounds(b) = viewport(this.data, this.zoom, this.view, b),
+
+                           logical_transform()                                 = this.view.inverse() /-composite/ this.logical_bounds,
+                           find(v, vi = this.logical_transform().transform(v)) = descend_while("_.bound() /~contains/ vi".qf, this.transformed_data()).first,
+
+                           render(canvas, f, s = jQuery(canvas), c = s[0].getContext('2d'), b = this.logical_bounds) = c.save() -then- c.scale(1.0 / b.dv[0], 1.0 / b.dv[1])
+                                                                                                                                -then- c.translate(-b.v[0], -b.v[1])
+                                                                                                                                -then- f(c) -then- c.restore(),
 
                            change_offset(p1, p2) = this |~with_zoom| this.zoom /~transform_with/ translate(p1).inverse() /~transform_with/ translate(p2),
-                           change_scale(p1, p2)  = this |~with_zoom| this.zoom /~transform_with/ scale    (p1).inverse() /~transform_with/ scale(p2)],
+                           change_scale(p1, p2)  = this |~with_zoom| this.zoom /~transform_with/ scale    (p1).inverse() /~transform_with/ scale    (p2)],
 
   cosine_tween(x)                    = Math.cos(x * Math.PI) * -0.5 + 0.5,
   animation(v1, v2, duration, tween) = capture [start         = +new Date,                      viewport() = v1.interpolate(v2, this.factor()),
@@ -1962,22 +1977,22 @@ these pieces can be changed. For a ring chart, for example, the transformations 
   events give you the original pageX and pageY coordinates along with the points transformed into data-space.
 
   drag_events(canvas) = self.mousedown(start_dragging).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
-                        -where [last_x = 0, last_y = 0, dragging = false, last_selected = null, $doc = jQuery(document), self = jQuery(canvas),
+                        -where [last_x = 0, last_y = 0, dragging = false, last_selected = null, doc = jQuery(document), self = jQuery(canvas),
                                 record(x, y)      = last_x /eq.x -then- last_y /eq.y,
-                                start_dragging(e) = record(e.pageX, e.pageY) -then- $doc /~mousemove/ drag /~mouseup/ stop_dragging,
-                                stop_dragging(e)  = $doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
-                                drag(e)           = self.trigger('splunge_drag_delta', {p1: [last_x - x, last_y - y], p2: [e.pageX - x, e.pageY - y]}) -then- record(e.pageX, e.pageY)
+                                start_dragging(e) = record(e.pageX, e.pageY) -then- doc /~mousemove/ drag /~mouseup/ stop_dragging,
+                                stop_dragging(e)  = doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
+                                drag(e)           = self.trigger('splunge_drag_delta', {shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey,
+                                                                                        p1: [last_x - x, last_y - y], p2: [e.pageX - x, e.pageY - y]}) -then- record(e.pageX, e.pageY)
                                                     -where [o = self.offset(), x = o.left, y = o.top]],
 
-  viewport_mapping(b, dv)              = box(b.v /-vtimes/ dv, b.dv /-vtimes/ dv),
-  default_ring_viewport(data, options) = viewport(data, options.zoom || [0, 0] /!translate, x_arctangent, polar),
+  default_ring_viewport(data, canvas, options, options = options || {}, c = jQuery(canvas), w = c.width(), h = c.height(), ar = w / h) =
+               viewport(data, options.zoom || [0, 0] /!translate, polar_to_cartesian / translate([0.1, 0]) /-composite/ x_arctangent, options.logical_bound || [-ar / 2, -1 / 2] /-box/ [ar / w, 1 / h]),
 
   default_interaction(canvas, v) = drag_events(canvas).on('splunge_drag_delta', pan_or_scale).modus("jQuery(this).data('splunge_viewport')".qf,
                                                                                                     "jQuery(this).data('splunge_viewport', _).trigger('splunge_render')".qf).val(v)
-
-                                   -where [self               = jQuery(canvas),                  pan(d)    = "_.change_offset(unview(d.p1), unview(d.p2))".qf /!change,
-                                           pan_or_scale(e, d) = e.shiftKey ? scale(d) : pan(d),  scale(d)  = "_.change_scale (unview(d.p1), unview(d.p2))".qf /!change,
-                                           change(f)          = self.val(f(self.val())),         unview(v) = self.val().view.inverse().transform(v)]],  using [caterwaul.vector(2, 'v')]});
+                                   -where [self               = jQuery(canvas),               pan(d)    = "_.change_offset(d.p1 /!unview, d.p2 /!unview)".qf /!change,
+                                           pan_or_scale(e, d) = d.shift ? scale(d) : pan(d),  scale(d)  = "_.change_scale (d.p1 /!unview, d.p2 /!unview)".qf /!change,
+                                           change(f)          = self.val() /!f /!self.val,    unview(v) = self.val().logical_transform().transform(v)]],  using [caterwaul.vector(2, 'v')]});
 
 __
 meta::sdoc('waul::vector', <<'__');
