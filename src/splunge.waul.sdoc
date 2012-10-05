@@ -36,7 +36,7 @@ make it fit inside a 2x by 2x box centered at the origin.
   polar_to_cartesian = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = cartesian_to_polar],
   cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],                             inverse() = polar_to_cartesian],
 
-  bounding_box(b)    = capture [transform(v) = b /~intern/ v, inverse() = this],
+  bounding_box(b)    = capture [transform(v) = b /~intern/ v, inverse() = identity_transform],  identity_transform = capture [transform(v) = v, inverse() = this],
 
   // Arguments to composite() are ordered like composed functions: composite(t1, t2, t3).transform(x) = t1.transform(t2.transform(t3.transform(x)))
   composite(ts = arguments) = capture [transform(v) = ts /[v][xs[xl - xi - 1].transform(x0)] -seq, inverse() = this.inverse_ -dcq- composite.apply(this, +ts *[x.inverse()] -seq) /se[it.inverse_ = this]],
@@ -203,15 +203,15 @@ these pieces can be changed. For a ring chart, for example, the transformations 
 
   drag_events(canvas) = self.mousedown(start_dragging).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
                         -where [sx = 0, sy = 0, start = null, last_selected = null, doc = jQuery(document), self = jQuery(canvas),
-                                setup_drag(x, y, v) = sx /eq.x -then- sy /eq.y -then- start /eq.v,
-                                start_dragging(e)   = setup_drag(e.pageX, e.pageY, self.val()) -then- doc /~mousemove/ drag /~mouseup/ stop_dragging,
-                                stop_dragging(e)    = doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging),
-                                drag(e)             = self.trigger('splunge_drag_delta', {shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey,
-                                                                                          start: start, p1: [sx - x, sy - y], p2: [e.pageX - x, e.pageY - y]})
-                                                      -where [o = self.offset(), x = o.left, y = o.top]],
+                                reset_drag(e)     = (sx = e.pageX, sy = e.pageY, start = self.val()),
+                                start_dragging(e) = reset_drag(e) -then- doc /~mousemove/ drag /~mouseup/ stop_dragging /~keydown/ reset_drag /~keyup/ reset_drag,
+                                stop_dragging(e)  = doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging).unbind('keydown', reset_drag).unbind('keyup', reset_drag),
+                                drag(e)           = self.trigger('splunge_drag_delta', {shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey,
+                                                                                        start: start, p1: [sx - x, sy - y], p2: [e.pageX - x, e.pageY - y]})
+                                                    -where [o = self.offset(), x = o.left, y = o.top]],
 
   default_ring_viewport(data, canvas, options, options = options || {}, c = jQuery(canvas), w = c.width(), h = c.height(), ar = w / h) =
-               viewport(data, options.zoom || [0, 0] /!translate, polar_to_cartesian, options.logical_bound || [-ar / 2, -1 / 2] /-box/ [ar / w, 1 / h]),
+               viewport(data, options.zoom || [0, 0] /!translate, polar_to_cartesian /-composite/ bounding_box([0, 0] /-box/ [1, tau]), options.logical_bound || [-ar / 2, -1 / 2] /-box/ [ar / w, 1 / h]),
 
   default_interaction(canvas, v) = drag_events(canvas).on('splunge_drag_delta', pan_or_scale).modus("jQuery(this).data('splunge_viewport')".qf,
                                                                                                     "jQuery(this).data('splunge_viewport', _).trigger('splunge_render')".qf).val(v)

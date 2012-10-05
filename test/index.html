@@ -10,12 +10,12 @@
       where [s              = caterwaul.splunge,
              viewport_box   = [-2, -1] /-s.box/ [4, 2],
              render(e)      = $(this).val().render(this, "redraw(_, d)".qf -where [d = $(this).val().transformed_data()]),
-             redraw(c, d)   = c.clearRect(-400, -290, 800, 580) -then- c.lineWidth /eq[0.0025] -then- s.each(draw_arc(c), s.descend_while("true || _.bound().intersect(viewport_box).area() > 0.000000001".qf, d)),
+             redraw(c, d)   = c.clearRect(-2, -1, 4, 2) -then- c.lineWidth /eq[0.0025] -then- s.each(draw_arc(c), s.descend_while("true || _.bound().intersect(viewport_box).area() > 0.000000001".qf, d)),
              draw_arc(c)(d) = c.save() -then- c.beginPath() -then- s.arc_path(d, c) -then- c.closePath() -then- c.stroke() -then- c.restore(),
-             data           = s.cons_from_array(n[1, 50] *[[.01 + .015 * x, 0.01] /-s.box/ [.01, Math.sqrt(x) * 0.05]] -seq)]}))
+             data           = s.cons_from_array(n[1, 50] *[[.01 + .015 * x, 0.01] /-s.box/ [.01, Math.sqrt(x) * 0.5]] -seq)]}))
   </script>
 </head>
-<body style='margin:0'>
-  <canvas id='splunge-test' width='800' height='580'></canvas>
+<body style='margin:0;overflow:hidden'>
+  <canvas id='splunge-test' width='1024' height='600'></canvas>
 </body>
 </html>
