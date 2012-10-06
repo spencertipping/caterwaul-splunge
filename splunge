@@ -647,8 +647,10 @@ sub waulfile {file::write("src/$_[0].waul.sdoc", retrieve("sdoc::waul::$_[0]"));
 waulfile $_ for qw/splunge/;
 sh('waul -e deps/numeric-offline-2.js src/splunge.waul.sdoc') unless $$options{-W};
 
-file::write('splunge.js',     cat(qw|deps/numeric-offline-2.js src/splunge.js|));
-file::write('splunge.all.js', cat(qw|deps/caterwaul.core.min.js deps/numeric-offline-2.js splunge.js|));
+file::write('caterwaul-splunge.js', cat(qw|deps/numeric-offline-2.js src/splunge.js|));
+file::write('splunge.js',           cat(qw|deps/caterwaul.core.min.js caterwaul-splunge.js|));
+
+minify_yui('splunge.js', '-m') unless $$options{-M} || $$options{-W};
 
 __
 meta::function('rm', <<'__');
@@ -1923,11 +1925,9 @@ the transformation legitimately breaks the arcs, not due to a bug here).
 
   no_path(b)(c)                                              = null,
   rectangle_path(b)(c)                                       = c.beginPath() -then- c.rect(b.v[0], b.v[1], b.dv[0], b.dv[1]),
-  arc_path(b, p = b /~transform_with/ cartesian_to_polar)(c) = c.beginPath() -then- c.arc(0, 0, p.v[0], p.v[1], p.v[1] + p.dv[1], true) -then- c.arc(0, 0, p.v[0] + p.dv[0], p.v[1] + p.dv[1], p.v[1]),
+  arc_path(b, p = b /~transform_with/ cartesian_to_polar)(c) = c.beginPath() -then- c.arc(0, 0, p.v[0], p.v[1], p.v[1] + p.dv[1], true) -then- c.arc(0, 0, p.v[0] + p.dv[0], p.v[1] + p.dv[1], p.v[1])],
 
-
-
-  using [caterwaul.numeric_offline_2]]});
+  using [caterwaul.numeric_offline_2]});
 
 __
 meta::template('comment', '\'\';     # A mechanism for line or block comments.');
