@@ -166,4 +166,4 @@ the transformation legitimately breaks the arcs, not due to a bug here).
       rectangle_path(b)(c)                                       = c.beginPath() -then- c.rect(b.v[0], b.v[1], b.dv[0], b.dv[1]),
       arc_path(b, p = b /~transform_with/ cartesian_to_polar)(c) = c.beginPath() -then- c.arc(0, 0, p.v[0], p.v[1], p.v[1] + p.dv[1], true) -then- c.arc(0, 0, p.v[0] + p.dv[0], p.v[1] + p.dv[1], p.v[1]),
 
-      using [caterwaul.vector('v', 2)]]});
+      using [caterwaul.numeric_offline_2]]});
