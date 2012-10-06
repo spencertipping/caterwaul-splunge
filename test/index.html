@@ -2,8 +2,10 @@
 <html>
 <head>
   <script src='jquery.min.js'></script>
-  <script src='../splunge.all.js'></script>
+  <script src='caterwaul.min.js'></script>
+  <script src='caterwaul.std.min.js'></script>
   <script src='caterwaul.ui.min.js'></script>
+  <script src='../caterwaul-splunge.js'></script>
   <script>
     $(caterwaul(':all')(function () {
       s.default_interaction($('#splunge-test').on('splunge_render', render), s.default_ring_viewport(data, $('#splunge-test'))),
