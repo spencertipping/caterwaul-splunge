@@ -648,7 +648,6 @@ sub waulfile {file::write("src/$_[0].waul.sdoc", retrieve("sdoc::waul::$_[0]"));
 sub depwaul {file::write("deps/$_[0].md", retrieve("deps/$_[0].waul.sdoc"))}
 
 waulfile $_ for qw/vector splunge/;
-depwaul  $_ for qw/modus/;
 
 sh('waul src/vector.waul.sdoc'),
 sh('waul -e src/vector.js src/splunge.waul.sdoc') unless $$options{-W};
