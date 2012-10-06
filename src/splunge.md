@@ -30,11 +30,14 @@ Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the c
 so that you can use the cartesian_to_polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a
 scale(x, x) transformation to make it fit inside a 2x by 2x box centered at the origin.
 
-      tau = Math.PI * 2,  atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
-                          id(x)      = x,            scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
+Infinity isn't really infinity. Instead, it's a number that corresponds to the reciprocal of the machine epsilon (FP rounding error). This means that "infinite" values can be worked with normally. See
+http://en.wikipedia.org/wiki/Machine_epsilon for ways to compute it.
 
-      x_tangent          = capture [transform = componentwise(scaled_tan, id), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, id), inverse() = x_tangent],
-      y_tangent          = capture [transform = componentwise(id, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise(id, scaled_atan), inverse() = y_tangent],
+      tau     = Math.PI * 2,            atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
+      epsilon = 2.220446049250313e-16,  infinity   = 1 / epsilon,  scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
+
+      x_tangent          = capture [transform = componentwise(scaled_tan, "_".qf), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, "_".qf), inverse() = x_tangent],
+      y_tangent          = capture [transform = componentwise("_".qf, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise("_".qf, scaled_atan), inverse() = y_tangent],
       polar_to_cartesian = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = cartesian_to_polar],
       cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, (t + tau) % tau],               inverse() = polar_to_cartesian],
 
@@ -72,8 +75,8 @@ vertically. You can also use it to stack descendants, though if your charts are 
                         scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),     bound()           = this,
                         times(v)  = box(this.v, v /-vtimes/ this.dv),                  inverse()         = box(this.v /-vscale/ -1, [1 / this.dv[0], 1 / this.dv[1]])],
 
-    box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-1/0, -1/0], [1/0, 1/0]),
-    rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([   0,    0], [  0,   0]),
+    box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-infinity, -infinity], [2 * infinity, 2 * infinity]),
+    rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([        0,         0], [           0,            0]),
 
 # Infinite data sets
 
@@ -126,7 +129,8 @@ This isn't too complicated, but it is a little subtle. The idea is to be able to
     1. An object's bounds change. This is trivial: just interpolate the bounding boxes.
     2. An object is added or deleted. Scale the object from [0, 0] to [1, 1] or vice versa -- but don't change its location.
 
-This transformation is performed as a reduction on the resulting data, so it, like other transformations, happens lazily. Strange stuff will happen if one bounding box is infinite and the other is not.
+This transformation is performed as a reduction on the resulting data, so it, like other transformations, happens lazily. Because we've fabricated infinity, you can use this function with infinite
+bounds without anything catastrophic happening (though I think it's possible that you'll lose some precision in certain cases).
 
     scale_size(l, x, b = l.bound()) = l.transform_with(translate(b.v) / scale([x, x]) /-composite/ translate([-b.v[0], -b.v[1]])),
     list_interpolation(l1, l2, x)   = x === 0 ? l1 : x === 1 ? l2 : l1 === l2 ? l1 : l1 === null ? scale_size(l2, 1 - x) : l2 === null ? scale_size(l1, x) :
@@ -143,7 +147,7 @@ When this happens depends on the view transform. If something like the arctangen
 from the focal point increases. Using a minimal-area heuristic is ideal for situations like this, and it also covers the usual clipping case.
 
     viewport_bounds = box([-200, -200], [400, 400]),
-    draw(path)(box) = my_context.beginPath() -then- path(box, my_context) -then- my_context.fill(),
+    draw(path)(box) = path(box)(my_context) -then- my_context.fill(),
     render(data)    = each(draw(arc_path), descend_while("_.intersect(viewport_bounds).area() > 0.01".qf, data))
 
 Using descendants_while() like this will exploit bound transitivity so that you can render infinitely large datasets. each() is required to force the resulting list. If your data consists of elements
@@ -154,7 +158,9 @@ polar form -- so your boxes are in the form [[rho, theta], [drho, dtheta]]. And 
 well, so one of the view transformations will be polar_to_cartesian so that you get the inverse cartesian_to_polar operating on the mouse coordinates.
 
 Well, one of the side-effects of having a view transformation is that your data will be transformed prior to being rendered: so all of those polar coordinates our data used to have will be converted to
-regular Cartesian coordinates via the polar_to_cartesian transform. However, the arc() method uses polar coordinates. So we undo the transformation right before rendering the arc.
+regular Cartesian coordinates via the polar_to_cartesian transform. However, the arc() method uses polar coordinates. So we undo the transformation right before rendering the arc. Note that this is a
+hack that breaks some stuff; in particular, any transformations you make after polar_to_cartesian() must preserve the polar coordinates of those points; otherwise your arcs won't render properly (because
+the transformation legitimately breaks the arcs, not due to a bug here).
 
       no_path(b)(c)                                              = null,
       rectangle_path(b)(c)                                       = c.beginPath() -then- c.rect(b.v[0], b.v[1], b.dv[0], b.dv[1]),
