@@ -62,6 +62,7 @@ transformations.
                       transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,   union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
                                                                                                                                  c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
 
+                                                                                     toString()        = '[[#{this.v[0]}, #{this.v[1]}] -> [#{this.dv[0]}, #{this.dv[1]}]]',
                       intern(v) = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,  map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
                       plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),   transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
                       scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),     bound()           = this,
@@ -84,18 +85,18 @@ happens automatically with list structures, which have the property that if xs.r
   Any object that supports the reduce(x, f) and bound() methods can be rendered as a graph element. Cons cells as defined here do not have enough information to be rendered safely if they are infinite,
   though they will work just fine (albeit inefficiently) for small finite datasets. You should use bounded(), x_shadow(), or y_shadow() for large or infinite data sets.
 
-  cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /[null][cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x] /~concat/ rest()]),
-  k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),        reduce(xs, x_fn, f) = xs ? xs.reduce ? xs.reduce(x_fn, f) : f(xs, x_fn) : x_fn(),
+  cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /! [null] [cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x] /~concat/ rest()]),
+  k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),           reduce(xs, x_fn, f) = xs ? xs.reduce ? xs.reduce(x_fn, f) : f(xs, x_fn) : x_fn(),
 
   cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, null] -se- it.prototype /-$.merge/
-              capture [reduce(x_fn, f, r = this.rest) = f(this.first, "rest ? rest.reduce(x_fn, f) : x_fn(), where [rest = r()]".qf),  transform_with(t) = map("_.transform_with(t)".qf, this),
-                                                                                                                                       bound()           = bound_everything],
+              capture [reduce(x_fn, f, r = this.rest) = f(this.first, "rest ? rest.reduce(x_fn, f) : x_fn(), where [rest = r()]".qf),      transform_with(t) = map("_.transform_with(t)".qf, this),
+                       toString(force)                = '#{this.first} :: #{force ? this.rest() && this.rest().toString(force) : "..."}',  bound()           = bound_everything],
 
-  map(f, xs)    = reduce(xs, null /!k, given[x, rest] [cons(f(x), rest)]),               append(xs, ys_f) = xs ? xs.reduce(ys_f, cons) : ys_f(),
+  map(f, xs)    = reduce(xs, null /!k, given[x, rest] [cons(f(x), rest)]),               append(xs, ys_f) = xs ? xs.reduce(ys_f, cons) : ys_f(),                first(xs) = xs && xs.first,
   filter(f, xs) = reduce(xs, null /!k, given[x, rest] [f(x) ? cons(x, rest) : rest()]),  each(f, xs)      = reduce(xs, xs /!k, given[x, rest] [f(x), rest()]),
 
   take_while(f, xs)    = reduce(xs, null /!k, given[x, rest] [f(x) ? cons(x, rest) : null]),
-  descend_while(f, xs) = !xs || xs.reduce ? reduce(take_while(f, xs), null /!k, given[x, rest] [descend_while(f, x) /-append/ rest]) : list(xs),
+  descend_while(f, xs) = !xs || xs.reduce ? reduce(filter(f, xs), null /!k, given[x, rest] [descend_while(f, x) /-append/ rest]) : list(xs),
 
   Artificial bounding.
   This is used as a workaround for indefinite hierarchies that arise from laziness. We need a way to find the bounding box of a potentially infinite list of items. Instead of blocking until we know the
@@ -166,8 +167,8 @@ these pieces can be changed. For a ring chart, for example, the transformations 
                            animate(to, duration, tween) = animation(this, to, duration || 400, tween || cosine_tween),        with_data(d)   = viewport(d, this.zoom, this.view, this.logical_bounds),
                            interpolate(v, x)            = this /~with_zoom/ this.zoom.interpolate(v.zoom, x),                 with_bounds(b) = viewport(this.data, this.zoom, this.view, b),
 
-                           logical_transform()                                 = this.view.inverse() /-composite/ this.logical_bounds,
-                           find(v, vi = this.logical_transform().transform(v)) = descend_while("_.bound() /~contains/ vi".qf, this.transformed_data()).first,
+                           logical_transform() = this.view.inverse() /-composite/ this.logical_bounds,  find(v)         = first(descend_while("_.bound() /~contains/ v".qf, this.transformed_data())),
+                                                                                                        find_surface(v) = this.find(this.logical_bounds /~transform/ v),
 
                            render(canvas, f, s = jQuery(canvas), c = s[0].getContext('2d'), b = this.logical_bounds) = c.save() -then- c.scale(1.0 / b.dv[0], 1.0 / b.dv[1])
                                                                                                                                 -then- c.translate(-b.v[0], -b.v[1])
@@ -201,17 +202,33 @@ these pieces can be changed. For a ring chart, for example, the transformations 
   The canvas given to default_interaction() can be either a jQuery object or a canvas element. You can also receive mouse events per data item by listening for splunge_mouse{down,up,out,over,move}. These
   events give you the original pageX and pageY coordinates along with the points transformed into data-space.
 
-  drag_events(canvas) = self.mousedown(start_dragging).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
+  drag_events(canvas) = self.mousedown(start_dragging).mousedown(route_splunge_event).
+                                                       mousemove(route_splunge_event).
+                                                       mouseup(route_splunge_event).
+                                                       mouseout(send_splunge_mouseout).data('splunge_drag_delta_installed', true) -unless- self.data('splunge_drag_delta_installed') -then- self
+
                         -where [sx = 0, sy = 0, lx = 0, ly = 0, start = null, last_selected = null, doc = jQuery(document), self = jQuery(canvas),
-                                reset_drag(e)     = (sx = e.pageX || lx, sy = e.pageY || ly, start = self.val()),
-                                start_dragging(e) = reset_drag(e) -then- doc /~mousemove/ drag /~mouseup/ stop_dragging /~keydown/ reset_drag /~keyup/ reset_drag,
-                                stop_dragging(e)  = doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging).unbind('keydown', reset_drag).unbind('keyup', reset_drag),
-                                drag(e)           = self.trigger('splunge_drag_delta', {shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey,
-                                                                                        start: start, p1: [sx - x, sy - y], p2: [(lx = e.pageX) - x, (ly = e.pageY) - y]})
-                                                    -where [o = self.offset(), x = o.left, y = o.top]],
+
+                                select_hovered_element(v) = jQuery.Event('splunge_mouseout',  {target: last_selected}) /!self.trigger /when [last_selected && last_selected !== new_selection]
+                                                     -then- jQuery.Event('splunge_mouseover', {target: new_selection}) /!self.trigger /when [new_selection && last_selected !== new_selection]
+                                                     -then- last_selected /eq.new_selection
+                                                     -where [new_selection = self.val() /~find/ v],
+
+                                route_splunge_event(e)    = select_hovered_element(v) -then- self.trigger(splungify(e, v))
+                                                            -where [o = self.offset(), v = self.val().zoom_transform() /~transform/ [e.pageX - o.left, e.pageY - o.top]],
+
+                                send_splunge_mouseout(e)  = self.trigger('splunge_mouseout', e, last_selected) -then- last_selected /eq.null,
+                                splungify(e, v)           = jQuery.Event(e, {} / e /-$.merge/ {type: 'splunge_#{e.type}', target: last_selected, x: v[0], y: v[1]}),
+
+                                reset_drag(e)             = (sx = e.pageX || lx, sy = e.pageY || ly, start = self.val()),
+                                start_dragging(e)         = reset_drag(e) -then- doc /~mousemove/ drag /~mouseup/ stop_dragging /~keydown/ reset_drag /~keyup/ reset_drag,
+                                stop_dragging(e)          = doc.unbind('mousemove', drag).unbind('mouseup', stop_dragging).unbind('keydown', reset_drag).unbind('keyup', reset_drag),
+                                drag(e)                   = self.trigger('splunge_drag_delta', {shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey, meta: e.metaKey,
+                                                                                                start: start, p1: [sx - x, sy - y], p2: [(lx = e.pageX) - x, (ly = e.pageY) - y]})
+                                                            -where [o = self.offset(), x = o.left, y = o.top]],
 
   default_ring_viewport(data, canvas, options, options = options || {}, c = jQuery(canvas), w = c.width(), h = c.height(), ar = w / h) =
-               viewport(data, options.zoom || [0, 0] /!translate, polar_to_cartesian / x_arctangent /-composite/ bounding_box([0, 0] /-box/ [1, tau]),
+               viewport(data, options.zoom || [0, 0] /!translate, polar_to_cartesian / bounding_box([0, 0] /-box/ [1, tau]) /-composite/ x_arctangent,
                               options.logical_bound || [-ar / 2, 1 / 2] /-box/ [ar / w, -1 / h]),
 
   default_interaction(canvas, v) = drag_events(canvas).on('splunge_drag_delta', pan_or_scale).modus("jQuery(this).data('splunge_viewport')".qf,

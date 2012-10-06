@@ -7,12 +7,20 @@
   <script>
     $(caterwaul(':all')(function () {
       s.default_interaction($('#splunge-test').on('splunge_render', render), s.default_ring_viewport(data, $('#splunge-test'))),
-      where [s              = caterwaul.splunge,
-             viewport_box   = [-2, -1] /-s.box/ [4, 2],
-             render(e)      = $(this).val().render(this, "redraw(_, d)".qf -where [d = $(this).val().transformed_data()]),
-             redraw(c, d)   = c.clearRect(-2, -1, 4, 2) -then- c.lineWidth /eq[0.0025] -then- s.each(draw_arc(c), s.descend_while("true || _.bound().intersect(viewport_box).area() > 0.000000001".qf, d)),
-             draw_arc(c)(d) = c.save() -then- c.beginPath() -then- s.arc_path(d, c) -then- c.closePath() -then- c.stroke() -then- c.restore(),
-             data           = s.cons_from_array(n[1, 50] *[[.01 + .015 * x, 0.01] /-s.box/ [.01, Math.sqrt(x) * 0.1]] -seq)]}))
+      $('#splunge-test').on('splunge_mouseover', "console.log(selected = _.target), render.call(this)".qf).on('splunge_mouseout', "console.log(selected = null), render.call(this)".qf),
+      $('#splunge-test').on('splunge_mousemove', "v = [_.x, _.y], render.call(this)".qf),
+      where [s               = caterwaul.splunge,
+             selected        = null,
+             v               = null,
+             self            = $('#splunge-test'),
+             viewport_box    = [-2, -1] /-s.box/ [4, 2],
+             render(e)       = $(this).val().render(this, "redraw(_, d)".qf -where [d = $(this).val().transformed_data()]),
+             redraw(c, d)    = c.clearRect(-2, -1, 4, 2) -then- c.lineWidth /eq[0.0025]
+                                                         -then- draw_rect(c)(v /-s.box/ [0.1, 0.1] /~transform_with/ self.val().zoom_transform().inverse()) /when.v
+                                                         -then- s.each(draw_arc(c), s.descend_while("true || _.bound().intersect(viewport_box).area() > 0.000000001".qf, d)),
+             draw_rect(c)(d) = c.save() -then- c.beginPath() -then- s.rectangle_path(d, c) -then- c.closePath() -then- c.stroke() -then- c.fill() /when [selected && selected.data === d.data] -then- c.restore(),
+             draw_arc(c)(d)  = c.save() -then- c.beginPath() -then- s.arc_path(d, c) -then- c.closePath() -then- c.stroke() -then- c.fill() /when [selected && selected.data === d.data] -then- c.restore(),
+             data            = s.cons_from_array(n[1, 50] *[x / [.01 + .015 * x, 0.01] /-s.rectangle/ [.01, Math.sqrt(x) * 0.1]] -seq)]}))
   </script>
 </head>
 <body style='margin:0;overflow:hidden'>
