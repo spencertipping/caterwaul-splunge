@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  fe59b7cbca805cee7a2fa7ca0f7f0716
-# istate: 15b4f7198db4e4cf9a80c1cf7f760beb
+# state:  f7bd1866f67b4214fcadc591589ba931
+# istate: 457ecf6d1ddb5776f88da90998feaeae
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -345,7 +345,7 @@ preprocessor 70dae4b46eb4e06798ec6f38d17d4c7b
 __
 meta::cache('parent-state', <<'__');
 246bc56c88e8e8daae3737dbb16a2a2c 6af055ed61fcf74d99f167fc983b4a9b
-4e04fdb8e560f4dd2ca4880b91a8e2ea 9f6f8e1b4835a14c3fbcad49bda743ed
+4e04fdb8e560f4dd2ca4880b91a8e2ea 8b49753d79526af839a112cb8baa238a
 70dae4b46eb4e06798ec6f38d17d4c7b e25c4729aff094da49d7b9903452bcea
 99aeabc9ec7fe80b1b39f5e53dc7e49e 20cbfd8b1bd09b6a60c0eea0f9ca525d
 a1e8480e579614c01dabeecf0f963bcc dc33b10238e896bad155335a5e119e2e
@@ -612,13 +612,14 @@ meta::function('minify-uglify', <<'__');
 # Minify using uglifyjs compressor
 my ($options, @filenames) = separate_options(@_);
 my $nomunge = $$options{-m} ? '' : '-nm';
+my $lift    = $$options{-L} ? '' : '--lift-vars';
 
 for my $filename (@filenames) {
   my $minified = $filename;
   $minified =~ s/\.js$/.min.js/;
 
   terminal::info("minifying $filename");
-  file::write($minified, join '', qx(uglifyjs $nomunge "$filename"));
+  file::write($minified, join '', qx(uglifyjs $nomunge $lift "$filename"));
 }
 
 __
@@ -1543,7 +1544,7 @@ meta::message_color('cc', '36');
 meta::message_color('state', 'purple');
 meta::message_color('states', 'yellow');
 meta::parent('/home/spencertipping/conjectures/caterwaul/waul-object', <<'__');
-function::minify-uglify                                     428caf52a952e40bd3c22877177cf7af
+function::minify-uglify                                     c3e4757bcfe8a6179269cab6d21ca99d
 function::minify-yui                                        6374d98eda8642e5cdebe4fb34f5419b
 function::waul                                              c43a481b20a4621a49c36fd70e67c94f
 meta::type::waul                                            869b5820cd79178b94c3ccdd47dff9df
@@ -1839,7 +1840,7 @@ transformations.
                       transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,   union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
                                                                                                                                  c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
 
-                                                                                     toString()        = '[[#{this.v[0]}, #{this.v[1]}] -> [#{this.dv[0]}, #{this.dv[1]}]]',
+                      max(b)    = box(this.v /-vmax/ b.v, this.dv),                  toString()        = '[[#{this.v[0]}, #{this.v[1]}] -> [#{this.dv[0]}, #{this.dv[1]}]]',
                       intern(v) = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,  map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
                       plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),   transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
                       scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),     bound()           = this,
@@ -1865,7 +1866,7 @@ happens automatically with list structures, which have the property that if xs.r
   cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /! [null] [cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x] /~concat/ rest()]),
   k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),           reduce(xs, x_fn, f) = xs ? xs.reduce ? xs.reduce(x_fn, f) : f(xs, x_fn) : x_fn(),
 
-  cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, this.bound_ = bound_everything /~intersect/ this.first.bound(), null] -se- it.prototype /-$.merge/
+  cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, this.bound_ = bound_everything /~max/ this.first.bound(), null] -se- it.prototype /-$.merge/
               capture [reduce(x_fn, f, r = this.rest) = f.call(this, this.first, "rest ? rest.reduce(x_fn, f) : x_fn(), where [rest = r()]".qf),  transform_with(t) = map("_.transform_with(t)".qf, this),
                        toString(force)                = '#{this.first} :: #{force ? this.rest() && this.rest().toString(force) : "..."}',         bound()           = this.bound_,
                        interpolate(l, x)              = list_interpolation(this, l, x)],

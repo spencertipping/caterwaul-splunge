@@ -69,7 +69,7 @@ vertically. You can also use it to stack descendants, though if your charts are 
                         transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,   union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
                                                                                                                                    c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
 
-                                                                                       toString()        = '[[#{this.v[0]}, #{this.v[1]}] -> [#{this.dv[0]}, #{this.dv[1]}]]',
+                        max(b)    = box(this.v /-vmax/ b.v, this.dv),                  toString()        = '[[#{this.v[0]}, #{this.v[1]}] -> [#{this.dv[0]}, #{this.dv[1]}]]',
                         intern(v) = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,  map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
                         plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),   transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
                         scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),     bound()           = this,
@@ -97,7 +97,7 @@ though they will work just fine (albeit inefficiently) for small finite datasets
     cons(first, rest_fn) = new cons_ctor(first, rest_fn),  cons_from_array(xs)  = xs /! [null] [cons(x, k(x0))] -seq,  cons_to_array(c)    = reduce(c, [], given[x, rest] [[x] /~concat/ rest()]),
     k(x)()               = x,                              list(xs = arguments) = cons_from_array(+xs -seq),           reduce(xs, x_fn, f) = xs ? xs.reduce ? xs.reduce(x_fn, f) : f(xs, x_fn) : x_fn(),
 
-    cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, this.bound_ = bound_everything /~intersect/ this.first.bound(), null] -se- it.prototype /-$.merge/
+    cons_ctor = given[first, rest_fn][this.first = first, this.rest = rest_fn, this.bound_ = bound_everything /~max/ this.first.bound(), null] -se- it.prototype /-$.merge/
                 capture [reduce(x_fn, f, r = this.rest) = f.call(this, this.first, "rest ? rest.reduce(x_fn, f) : x_fn(), where [rest = r()]".qf),  transform_with(t) = map("_.transform_with(t)".qf, this),
                          toString(force)                = '#{this.first} :: #{force ? this.rest() && this.rest().toString(force) : "..."}',         bound()           = this.bound_,
                          interpolate(l, x)              = list_interpolation(this, l, x)],
