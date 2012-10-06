@@ -1,7 +1,7 @@
-caterwaul.module( 'splunge' , (function(e1) {var result= (function($) { (function() {var vplus=e1.vplus,vtimes=e1.vtimes,vminus=e1.vminus,vscale=e1.vscale,vdot=e1.vdot,vnorm=e1.vnorm,vmin=e1.vmin,vmax=e1.vmax,vmacv=e1.vmacv,vmacs=e1.vmacs,vunit=e1.vunit,vproj=e1.vproj,vorth=e1.vorth;
-return $.splunge= (function() {var tau=Math.PI*2,atan_scale=2/Math.PI,scaled_atan=function(x) {;
+caterwaul.module( 'splunge' ,function($) {$.splunge= (function() {var(function() {var, ;
+return tau=Math.PI*2,atan_scale=2/Math.PI,scaled_atan=function(x) {;
 return Math.atan(x) *atan_scale} ,clip=function(x) {;
-return Math.min(Math.max(x, -1) ,1) } ,epsilon=3.1415926535897932e-8,id=function(x) {;
+return Math.min(Math.max(x, -1) ,1) } ,id=function(x) {;
 return x} ,scaled_tan=function(x) {;
 return Math.tan(clip(x/atan_scale) ) } ,componentwise=function(f1,f2) {;
 return function(v) {;
@@ -23,9 +23,9 @@ return v} ,inverse:function() {;
 return this} } ,composite=function() {var ts=arguments;
 return{transform:function(v) {;
 return(function(xs) {var x,x0,xi,xl,xr;
-for(var x0= (v) ,xi=0,xl=xs.length;
-xi<xl;
- ++xi)x=xs[xi] ,x0= (xs[xl-xi-1] .transform(x0) ) ;
+for(var xl=xs.length-1,xi=xl,x0= (v) ;
+xi>=0;
+ --xi)x=xs[xi] ,x0= (x.transform(x0) ) ;
 return x0} ) .call(this,ts) } ,inverse:function() {;
 return this.inverse_!==void 0?this.inverse_
 :this.inverse_= (function(it) {return it.inverse_=this,it} ) .call(this, (composite.apply(this, (function(xs) {var x,x0,xi,xl,xr;
@@ -67,23 +67,23 @@ return cons_from_array(Array.prototype.slice.call( (xs) ) ) } ,reduce=function(x
 return xs?xs.reduce?xs.reduce(x_fn,f) 
 :f(xs,x_fn) 
 :x_fn() } ,cons_ctor= (function(it) {return $.merge(it.prototype, {reduce:function(x_fn,f) {var r=this.rest;
-return f(this.first,function(_) {return(function() {var rest=r() ;
+return f.call(this,this.first,function(_) {return(function() {var rest=r() ;
 return rest?rest.reduce(x_fn,f) 
 :x_fn() } ) .call(this) } ) } ,transform_with:function(t) {;
 return map(function(_) {return _.transform_with(t) } ,this) } ,toString:function(force) {;
 return( '' + (this.first) + ' :: ' + (force?this.rest() &&this.rest() .toString(force) 
 : "..." ) + '' ) } ,bound:function() {;
-return bound_everything} } ) ,it} ) .call(this, ( (function(first,rest_fn) {return this.first=first,this.rest=rest_fn,null} ) ) ) ,map=function(f,xs) {;
+return this.bound_} ,interpolate:function(l,x) {;
+return list_interpolation(this,l,x) } } ) ,it} ) .call(this, ( (function(first,rest_fn) {return this.first=first,this.rest=rest_fn,this.bound_= (bound_everything) .intersect(this.first.bound() ) ,null} ) ) ) ,map=function(f,xs) {;
 return reduce(xs,k(null) , (function(x,rest) {return cons(f(x) ,rest) } ) ) } ,append=function(xs,ys_f) {;
-return xs?xs.reduce(ys_f,cons) 
-:ys_f() } ,first=function(xs) {;
+return reduce(xs,ys_f,cons) ||ys_f() } ,first=function(xs) {;
 return xs&&xs.first} ,filter=function(f,xs) {;
 return reduce(xs,k(null) , (function(x,rest) {return f(x) ?cons(x,rest) 
 :rest() } ) ) } ,each=function(f,xs) {;
-return reduce(xs,k(xs) , (function(x,rest) {return f(x) ,rest() } ) ) } ,take_while=function(f,xs) {;
-return reduce(xs,k(null) , (function(x,rest) {return f(x) ?cons(x,rest) 
+return reduce(xs,k(xs) , (function(x,rest) {return f(x) ,rest() } ) ) } ,take_outer_while=function(f,xs) {;
+return reduce(xs,k(null) , (function(x,rest) {return f(this) ?cons(x,rest) 
 :null} ) ) } ,descend_while=function(f,xs) {;
-return!xs||xs.reduce?reduce(filter(f,xs) ,k(null) , (function(x,rest) {return append(descend_while(f,x) ,rest) } ) ) 
+return!xs||xs.reduce?reduce(take_outer_while(f,xs) ,k(null) , (function(x,rest) {return append(descend_while(f,x) ,rest) } ) ) 
 :list(xs) } ,bounded=function(s,box) {;
 return{bound:function() {;
 return box} ,reduce:function(x,f) {;
@@ -93,54 +93,234 @@ return bounded(s, (bound) .times( [1,1/0] ) ) } ,x_compressed=function(xs,h) {;
 return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,x_stack=function(xs) {;
 return x_shadow(xs,xs.first.bound() ) } ,y_compressed=function(xs,h) {;
 return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,y_stack=function(xs) {;
-return y_shadow(xs,xs.first.bound() ) } ,rectangle_path=function(b,c) {;
-return c.rect(b.v[0] ,b.v[1] ,b.dv[0] ,b.dv[1] ) } ,arc_path=function(b,c) {var p= (b) .transform_with(cartesian_to_polar) ;
-return(c.arc(0,0,p.v[0] ,p.v[1] ,p.v[1] +p.dv[1] ,true) ,c.arc(0,0,p.v[0] +p.dv[0] ,p.v[1] +p.dv[1] ,p.v[1] ) ) } ,viewport=function(data,zoom,view,logical_bounds) {;
-return new viewport_ctor(data,zoom,view,logical_bounds) } ,viewport_ctor= (function(it) {return $.merge(it.prototype, {transformed_data:function() {;
-return( (this.data) .transform_with(this.zoom) ) .transform_with(this.view) } ,with_zoom:function(z) {;
-return viewport(this.data,z,this.view,this.logical_bounds) } ,animate:function(to,duration,tween) {;
-return animation(this,to,duration||400,tween||cosine_tween) } ,with_data:function(d) {;
-return viewport(d,this.zoom,this.view,this.logical_bounds) } ,interpolate:function(v,x) {;
-return(this) .with_zoom(this.zoom.interpolate(v.zoom,x) ) } ,with_bounds:function(b) {;
-return viewport(this.data,this.zoom,this.view,b) } ,logical_transform:function() {;
-return composite(this.view.inverse() ,this.logical_bounds) } ,find:function(v) {;
-return first(descend_while(function(_) {return(_.bound() ) .contains(v) } ,this.transformed_data() ) ) } ,find_surface:function(v) {;
-return this.find( (this.logical_bounds) .transform(v) ) } ,render:function(canvas,f) {var s=jQuery(canvas) ;
-var c=s[0] .getContext( '2d' ) ;
-var b=this.logical_bounds;
-return( ( ( (c.save() ,c.scale(1.0/b.dv[0] ,1.0/b.dv[1] ) ) ,c.translate( -b.v[0] , -b.v[1] ) ) ,f(c) ) ,c.restore() ) } ,change_offset:function(p1,p2) {;
-return(this) .with_zoom( ( (this.zoom) .transform_with(translate(p1) .inverse() ) ) .transform_with(translate(p2) ) ) } ,change_scale:function(p1,p2) {;
-return(this) .with_zoom( ( (this.zoom) .transform_with(scale(p1) .inverse() ) ) .transform_with(scale(p2) ) ) } } ) ,it} ) .call(this, ( (function(data,zoom,view,logical_bounds) {return this.data=data,this.zoom=zoom,this.view=view,this.logical_bounds=logical_bounds,null} ) ) ) ,cosine_tween=function(x) {;
-return Math.cos(x*Math.PI) * -0.5+0.5} ,animation=function(v1,v2,duration,tween) {;
-return{start: +new Date,viewport:function() {;
-return v1.interpolate(v2,this.factor() ) } ,is_complete:function() {;
-return+new Date-start>=duration} ,factor:function() {;
-return tween(Math.min(1, ( +new Date-start) /duration) ) } } } ,drag_events=function(canvas) {;
-return(function() {var sx=0,sy=0,lx=0,ly=0,start=null,last_selected=null,doc=jQuery(document) ,self=jQuery(canvas) ,select_hovered_element=function(v) {;
-return(function() {var new_selection= (self.val() ) .find(v) ;
-return( (last_selected&&last_selected!==new_selection&&self.trigger(jQuery.Event( 'splunge_mouseout' , {target:last_selected} ) ) ,new_selection&&last_selected!==new_selection&&self.trigger(jQuery.Event( 'splunge_mouseover' , {target:new_selection} ) ) ) ,last_selected=new_selection) } ) .call(this) } ,route_splunge_event=function(e) {;
-return(function() {var o=self.offset() ,v= (self.val() .zoom_transform() ) .transform( [e.pageX-o.left,e.pageY-o.top] ) ;
-return(select_hovered_element(v) ,self.trigger(splungify(e,v) ) ) } ) .call(this) } ,send_splunge_mouseout=function(e) {;
-return(self.trigger( 'splunge_mouseout' ,e,last_selected) ,last_selected=null) } ,splungify=function(e,v) {;
-return jQuery.Event(e,$.merge( {} ,e, {type: ( 'splunge_' + (e.type) + '' ) ,target:last_selected,x:v[0] ,y:v[1] } ) ) } ,reset_drag=function(e) {;
-return(sx=e.pageX||lx,sy=e.pageY||ly,start=self.val() ) } ,start_dragging=function(e) {;
-return(reset_drag(e) , ( ( ( (doc) .mousemove(drag) ) .mouseup(stop_dragging) ) .keydown(reset_drag) ) .keyup(reset_drag) ) } ,stop_dragging=function(e) {;
-return doc.unbind( 'mousemove' ,drag) .unbind( 'mouseup' ,stop_dragging) .unbind( 'keydown' ,reset_drag) .unbind( 'keyup' ,reset_drag) } ,drag=function(e) {;
-return(function() {var o=self.offset() ,x=o.left,y=o.top;
-return self.trigger( 'splunge_drag_delta' , {shift:e.shiftKey,ctrl:e.ctrlKey,alt:e.altKey,meta:e.metaKey,start:start,p1: [sx-x,sy-y] ,p2: [ (lx=e.pageX) -x, (ly=e.pageY) -y] } ) } ) .call(this) } ;
-return( !self.data( 'splunge_drag_delta_installed' ) &&self.mousedown(start_dragging) .mousedown(route_splunge_event) .mousemove(route_splunge_event) .mouseup(route_splunge_event) .mouseout(send_splunge_mouseout) .data( 'splunge_drag_delta_installed' ,true) ,self) } ) .call(this) } ,default_ring_viewport=function(data,canvas,options) {var options=options|| {} ;
-var c=jQuery(canvas) ;
-var w=c.width() ;
-var h=c.height() ;
-var ar=w/h;
-return viewport(data,options.zoom||translate( [0,0] ) ,composite(polar_to_cartesian,bounding_box(box( [0,0] , [1,tau] ) ) ,x_arctangent) ,options.logical_bound||box( [ -ar/2,1/2] , [ar/w, -1/h] ) ) } ,default_interaction=function(canvas,v) {;
-return(function() {var self=jQuery(canvas) ,pan=function(d) {;
-return self.val(d.start.change_offset(unview(d.p1,d.start) ,unview(d.p2,d.start) ) ) } ,pan_or_scale=function(e,d) {;
-return d.shift?scale(d) 
-:pan(d) } ,scale=function(d) {;
-return self.val(d.start.change_scale(unview(d.p1,d.start) ,unview(d.p2,d.start) ) ) } ,unview=function(v,d) {;
-return d.logical_transform() .transform(v) } ;
-return drag_events(canvas) .on( 'splunge_drag_delta' ,pan_or_scale) .modus(function(_) {return jQuery(this) .data( 'splunge_viewport' ) } ,function(_) {return jQuery(this) .data( 'splunge_viewport' ,_) .trigger( 'splunge_render' ) } ) .val(v) } ) .call(this) } ;
-return{tau:tau,atan_scale:atan_scale,scaled_atan:scaled_atan,clip:clip,epsilon:epsilon,id:id,scaled_tan:scaled_tan,componentwise:componentwise,x_tangent:x_tangent,x_arctangent:x_arctangent,y_tangent:y_tangent,y_arctangent:y_arctangent,polar_to_cartesian:polar_to_cartesian,cartesian_to_polar:cartesian_to_polar,bounding_box:bounding_box,identity_transform:identity_transform,composite:composite,box_ctor:box_ctor,box:box,translate:translate,bound_everything:bound_everything,rectangle:rectangle,scale:scale,bound_nothing:bound_nothing,cons:cons,cons_from_array:cons_from_array,cons_to_array:cons_to_array,k:k,list:list,reduce:reduce,cons_ctor:cons_ctor,map:map,append:append,first:first,filter:filter,each:each,take_while:take_while,descend_while:descend_while,bounded:bounded,x_shadow:x_shadow,y_shadow:y_shadow,x_compressed:x_compressed,x_stack:x_stack,y_compressed:y_compressed,y_stack:y_stack,rectangle_path:rectangle_path,arc_path:arc_path,viewport:viewport,viewport_ctor:viewport_ctor,cosine_tween:cosine_tween,animation:animation,drag_events:drag_events,default_ring_viewport:default_ring_viewport,default_interaction:default_interaction} } ) .call(this) } ) .call(this) } ) ;
-result.caterwaul_expression_ref_table= {e1: ( "caterwaul.vector(2, 'v' )" ) } ;
-return(result) } ) .call(this,caterwaul.vector(2, 'v' ) ) ) ;
+return y_shadow(xs,xs.first.bound() ) } ,scale_size=function(l,x) {var b=l.bound() ;
+return l.transform_with(composite(translate(b.v) ,scale( [x,x] ) ,translate( [ -b.v[0] , -b.v[1] ] ) ) ) } ,list_interpolation=function(l1,l2,x) {;
+return x===0?l1
+:x===1?l2
+:l1===l2?l1
+:l1===null?scale_size(l2,1-x) 
+:l2===null?scale_size(l1,x) 
+:cons(list_interpolation(l1.first,l2.first,x) .transform_with(composite(l1.bound() .interpolate(l2.bound() ,x) ,l1.bound() .inverse() ) ) ,function(_) {return list_interpolation(l1.rest() ,l2.rest() ,x) } ) } ,no_path=function(b) {;
+return function(c) {;
+return null} } ,rectangle_path=function(b) {;
+return function(c) {;
+return(c.beginPath() ,c.rect(b.v[0] ,b.v[1] ,b.dv[0] ,b.dv[1] ) ) } } ,arc_path=function(b) {var p= (b) .transform_with(cartesian_to_polar) ;
+return function(c) {;
+return( (c.beginPath() ,c.arc(0,0,p.v[0] ,p.v[1] ,p.v[1] +p.dv[1] ,true) ) ,c.arc(0,0,p.v[0] +p.dv[0] ,p.v[1] +p.dv[1] ,p.v[1] ) ) } } } ) .call(this) ;
+return{ (function() {var, ;
+return tau=Math.PI*2,atan_scale=2/Math.PI,scaled_atan=function(x) {;
+return Math.atan(x) *atan_scale} ,clip=function(x) {;
+return Math.min(Math.max(x, -1) ,1) } ,id=function(x) {;
+return x} ,scaled_tan=function(x) {;
+return Math.tan(clip(x/atan_scale) ) } ,componentwise=function(f1,f2) {;
+return function(v) {;
+return[f1(v[0] ) ,f2(v[1] ) ] } } ,x_tangent= {transform:componentwise(scaled_tan,id) ,inverse:function() {;
+return x_arctangent} } ,x_arctangent= {transform:componentwise(scaled_atan,id) ,inverse:function() {;
+return x_tangent} } ,y_tangent= {transform:componentwise(id,scaled_tan) ,inverse:function() {;
+return y_arctangent} } ,y_arctangent= {transform:componentwise(id,scaled_atan) ,inverse:function() {;
+return y_tangent} } ,polar_to_cartesian= {transform:function(v) {var d=v[0] ;
+var t=v[1] ;
+return[d*Math.cos(t) ,d*Math.sin(t) ] } ,inverse:function() {;
+return cartesian_to_polar} } ,cartesian_to_polar= {transform:function(v) {var d=vnorm(v) ;
+var t=Math.atan2(v[0] ,v[1] ) ;
+return[d, (t+tau) %tau] } ,inverse:function() {;
+return polar_to_cartesian} } ,bounding_box=function(b) {;
+return{transform:function(v) {;
+return(b) .intern(v) } ,inverse:function() {;
+return identity_transform} } } ,identity_transform= {transform:function(v) {;
+return v} ,inverse:function() {;
+return this} } ,composite=function() {var ts=arguments;
+return{transform:function(v) {;
+return(function(xs) {var x,x0,xi,xl,xr;
+for(var xl=xs.length-1,xi=xl,x0= (v) ;
+xi>=0;
+ --xi)x=xs[xi] ,x0= (x.transform(x0) ) ;
+return x0} ) .call(this,ts) } ,inverse:function() {;
+return this.inverse_!==void 0?this.inverse_
+:this.inverse_= (function(it) {return it.inverse_=this,it} ) .call(this, (composite.apply(this, (function(xs) {var x,x0,xi,xl,xr;
+for(var xr=new xs.constructor() ,xi=0,xl=xs.length;
+xi<xl;
+ ++xi)x=xs[xi] ,xr.push( (x.inverse() ) ) ;
+return xr} ) .call(this,Array.prototype.slice.call( (ts) ) ) ) ) ) } } } ,box_ctor= (function(it) {return $.merge(it.prototype, {area:function() {;
+return this.dv[0] *this.dv[1] } ,contains:function(v) {;
+return v[0] >=this.v[0] &&v[1] >=this.v[1] &&v[0] <=this.v[0] +this.dv[0] &&v[1] <=this.v[1] +this.dv[1] } ,interpolate:function(b,x) {;
+return(this.scale(1-x) ) .plus(b.scale(x) ) } ,intersect:function(b) {;
+return(this) .map_corners(function(_) {return(b) .intern(_) } ) } ,transform:function(v) {;
+return vplus(this.v,vtimes(v,this.dv) ) } ,union:function(b) {;
+return(function() {var c1=vmin(this.v,b.v) ,c2=vmax(vplus(this.v,this.dv) ,vplus(b.v,b.dv) ) ;
+return box(c1,vminus(c2,c1) ) } ) .call(this) } ,toString:function() {;
+return( '[[' + (this.v[0] ) + ', ' + (this.v[1] ) + '] -> [' + (this.dv[0] ) + ', ' + (this.dv[1] ) + ']]' ) } ,intern:function(v) {;
+return vmin(vmax(v,this.v) ,vplus(this.v,this.dv) ) } ,map_corners:function(f) {;
+return(function() {var c1=f(this.v) ,c2=f(vplus(this.v,this.dv) ) ;
+return rectangle(this.data,c1,vminus(c2,c1) ) } ) .call(this) } ,plus:function(b) {;
+return box(vplus(this.v,b.v) ,vplus(this.dv,b.dv) ) } ,transform_with:function(t) {;
+return(this) .map_corners(function(_) {return(t) .transform(_) } ) } ,scale:function(x) {;
+return box(vscale(this.v,x) ,vscale(this.dv,x) ) } ,bound:function() {;
+return this} ,times:function(v) {;
+return box(this.v,vtimes(v,this.dv) ) } ,inverse:function() {;
+return box(vscale(this.v, -1) , [1/this.dv[0] ,1/this.dv[1] ] ) } } ) ,it} ) .call(this, ( (function(v,dv) {return this.v=v,this.dv=dv,null} ) ) ) ,box=function(v,dv) {;
+return new box_ctor(v,dv) } ,translate=function(v) {;
+return new box_ctor(v, [1,1] ) } ,bound_everything=box( [ -1/0, -1/0] , [1/0,1/0] ) ,rectangle=function(data,v,dv) {var b=box(v,dv) ;
+return(b.data=data,b) } ,scale=function(v) {;
+return new box_ctor( [0,0] ,v) } ,bound_nothing=box( [0,0] , [0,0] ) ,cons=function(first,rest_fn) {;
+return new cons_ctor(first,rest_fn) } ,cons_from_array=function(xs) {;
+return(function(xs) {var x,x0,xi,xl,xr;
+for(var xl=xs.length-1,xi=xl,x0= (null) ;
+xi>=0;
+ --xi)x=xs[xi] ,x0= (cons(x,k(x0) ) ) ;
+return x0} ) .call(this,xs) } ,cons_to_array=function(c) {;
+return reduce(c, [] , (function(x,rest) {return( [x] ) .concat(rest() ) } ) ) } ,k=function(x) {;
+return function() {;
+return x} } ,list=function() {var xs=arguments;
+return cons_from_array(Array.prototype.slice.call( (xs) ) ) } ,reduce=function(xs,x_fn,f) {;
+return xs?xs.reduce?xs.reduce(x_fn,f) 
+:f(xs,x_fn) 
+:x_fn() } ,cons_ctor= (function(it) {return $.merge(it.prototype, {reduce:function(x_fn,f) {var r=this.rest;
+return f.call(this,this.first,function(_) {return(function() {var rest=r() ;
+return rest?rest.reduce(x_fn,f) 
+:x_fn() } ) .call(this) } ) } ,transform_with:function(t) {;
+return map(function(_) {return _.transform_with(t) } ,this) } ,toString:function(force) {;
+return( '' + (this.first) + ' :: ' + (force?this.rest() &&this.rest() .toString(force) 
+: "..." ) + '' ) } ,bound:function() {;
+return this.bound_} ,interpolate:function(l,x) {;
+return list_interpolation(this,l,x) } } ) ,it} ) .call(this, ( (function(first,rest_fn) {return this.first=first,this.rest=rest_fn,this.bound_= (bound_everything) .intersect(this.first.bound() ) ,null} ) ) ) ,map=function(f,xs) {;
+return reduce(xs,k(null) , (function(x,rest) {return cons(f(x) ,rest) } ) ) } ,append=function(xs,ys_f) {;
+return reduce(xs,ys_f,cons) ||ys_f() } ,first=function(xs) {;
+return xs&&xs.first} ,filter=function(f,xs) {;
+return reduce(xs,k(null) , (function(x,rest) {return f(x) ?cons(x,rest) 
+:rest() } ) ) } ,each=function(f,xs) {;
+return reduce(xs,k(xs) , (function(x,rest) {return f(x) ,rest() } ) ) } ,take_outer_while=function(f,xs) {;
+return reduce(xs,k(null) , (function(x,rest) {return f(this) ?cons(x,rest) 
+:null} ) ) } ,descend_while=function(f,xs) {;
+return!xs||xs.reduce?reduce(take_outer_while(f,xs) ,k(null) , (function(x,rest) {return append(descend_while(f,x) ,rest) } ) ) 
+:list(xs) } ,bounded=function(s,box) {;
+return{bound:function() {;
+return box} ,reduce:function(x,f) {;
+return f(s,x) } } } ,x_shadow=function(s,bound) {;
+return bounded(s, (bound) .times( [1/0,1] ) ) } ,y_shadow=function(s,bound) {;
+return bounded(s, (bound) .times( [1,1/0] ) ) } ,x_compressed=function(xs,h) {;
+return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,x_stack=function(xs) {;
+return x_shadow(xs,xs.first.bound() ) } ,y_compressed=function(xs,h) {;
+return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,y_stack=function(xs) {;
+return y_shadow(xs,xs.first.bound() ) } ,scale_size=function(l,x) {var b=l.bound() ;
+return l.transform_with(composite(translate(b.v) ,scale( [x,x] ) ,translate( [ -b.v[0] , -b.v[1] ] ) ) ) } ,list_interpolation=function(l1,l2,x) {;
+return x===0?l1
+:x===1?l2
+:l1===l2?l1
+:l1===null?scale_size(l2,1-x) 
+:l2===null?scale_size(l1,x) 
+:cons(list_interpolation(l1.first,l2.first,x) .transform_with(composite(l1.bound() .interpolate(l2.bound() ,x) ,l1.bound() .inverse() ) ) ,function(_) {return list_interpolation(l1.rest() ,l2.rest() ,x) } ) } ,no_path=function(b) {;
+return function(c) {;
+return null} } ,rectangle_path=function(b) {;
+return function(c) {;
+return(c.beginPath() ,c.rect(b.v[0] ,b.v[1] ,b.dv[0] ,b.dv[1] ) ) } } ,arc_path=function(b) {var p= (b) .transform_with(cartesian_to_polar) ;
+return function(c) {;
+return( (c.beginPath() ,c.arc(0,0,p.v[0] ,p.v[1] ,p.v[1] +p.dv[1] ,true) ) ,c.arc(0,0,p.v[0] +p.dv[0] ,p.v[1] +p.dv[1] ,p.v[1] ) ) } } } ) .call: (function() {var, ;
+return tau=Math.PI*2,atan_scale=2/Math.PI,scaled_atan=function(x) {;
+return Math.atan(x) *atan_scale} ,clip=function(x) {;
+return Math.min(Math.max(x, -1) ,1) } ,id=function(x) {;
+return x} ,scaled_tan=function(x) {;
+return Math.tan(clip(x/atan_scale) ) } ,componentwise=function(f1,f2) {;
+return function(v) {;
+return[f1(v[0] ) ,f2(v[1] ) ] } } ,x_tangent= {transform:componentwise(scaled_tan,id) ,inverse:function() {;
+return x_arctangent} } ,x_arctangent= {transform:componentwise(scaled_atan,id) ,inverse:function() {;
+return x_tangent} } ,y_tangent= {transform:componentwise(id,scaled_tan) ,inverse:function() {;
+return y_arctangent} } ,y_arctangent= {transform:componentwise(id,scaled_atan) ,inverse:function() {;
+return y_tangent} } ,polar_to_cartesian= {transform:function(v) {var d=v[0] ;
+var t=v[1] ;
+return[d*Math.cos(t) ,d*Math.sin(t) ] } ,inverse:function() {;
+return cartesian_to_polar} } ,cartesian_to_polar= {transform:function(v) {var d=vnorm(v) ;
+var t=Math.atan2(v[0] ,v[1] ) ;
+return[d, (t+tau) %tau] } ,inverse:function() {;
+return polar_to_cartesian} } ,bounding_box=function(b) {;
+return{transform:function(v) {;
+return(b) .intern(v) } ,inverse:function() {;
+return identity_transform} } } ,identity_transform= {transform:function(v) {;
+return v} ,inverse:function() {;
+return this} } ,composite=function() {var ts=arguments;
+return{transform:function(v) {;
+return(function(xs) {var x,x0,xi,xl,xr;
+for(var xl=xs.length-1,xi=xl,x0= (v) ;
+xi>=0;
+ --xi)x=xs[xi] ,x0= (x.transform(x0) ) ;
+return x0} ) .call(this,ts) } ,inverse:function() {;
+return this.inverse_!==void 0?this.inverse_
+:this.inverse_= (function(it) {return it.inverse_=this,it} ) .call(this, (composite.apply(this, (function(xs) {var x,x0,xi,xl,xr;
+for(var xr=new xs.constructor() ,xi=0,xl=xs.length;
+xi<xl;
+ ++xi)x=xs[xi] ,xr.push( (x.inverse() ) ) ;
+return xr} ) .call(this,Array.prototype.slice.call( (ts) ) ) ) ) ) } } } ,box_ctor= (function(it) {return $.merge(it.prototype, {area:function() {;
+return this.dv[0] *this.dv[1] } ,contains:function(v) {;
+return v[0] >=this.v[0] &&v[1] >=this.v[1] &&v[0] <=this.v[0] +this.dv[0] &&v[1] <=this.v[1] +this.dv[1] } ,interpolate:function(b,x) {;
+return(this.scale(1-x) ) .plus(b.scale(x) ) } ,intersect:function(b) {;
+return(this) .map_corners(function(_) {return(b) .intern(_) } ) } ,transform:function(v) {;
+return vplus(this.v,vtimes(v,this.dv) ) } ,union:function(b) {;
+return(function() {var c1=vmin(this.v,b.v) ,c2=vmax(vplus(this.v,this.dv) ,vplus(b.v,b.dv) ) ;
+return box(c1,vminus(c2,c1) ) } ) .call(this) } ,toString:function() {;
+return( '[[' + (this.v[0] ) + ', ' + (this.v[1] ) + '] -> [' + (this.dv[0] ) + ', ' + (this.dv[1] ) + ']]' ) } ,intern:function(v) {;
+return vmin(vmax(v,this.v) ,vplus(this.v,this.dv) ) } ,map_corners:function(f) {;
+return(function() {var c1=f(this.v) ,c2=f(vplus(this.v,this.dv) ) ;
+return rectangle(this.data,c1,vminus(c2,c1) ) } ) .call(this) } ,plus:function(b) {;
+return box(vplus(this.v,b.v) ,vplus(this.dv,b.dv) ) } ,transform_with:function(t) {;
+return(this) .map_corners(function(_) {return(t) .transform(_) } ) } ,scale:function(x) {;
+return box(vscale(this.v,x) ,vscale(this.dv,x) ) } ,bound:function() {;
+return this} ,times:function(v) {;
+return box(this.v,vtimes(v,this.dv) ) } ,inverse:function() {;
+return box(vscale(this.v, -1) , [1/this.dv[0] ,1/this.dv[1] ] ) } } ) ,it} ) .call(this, ( (function(v,dv) {return this.v=v,this.dv=dv,null} ) ) ) ,box=function(v,dv) {;
+return new box_ctor(v,dv) } ,translate=function(v) {;
+return new box_ctor(v, [1,1] ) } ,bound_everything=box( [ -1/0, -1/0] , [1/0,1/0] ) ,rectangle=function(data,v,dv) {var b=box(v,dv) ;
+return(b.data=data,b) } ,scale=function(v) {;
+return new box_ctor( [0,0] ,v) } ,bound_nothing=box( [0,0] , [0,0] ) ,cons=function(first,rest_fn) {;
+return new cons_ctor(first,rest_fn) } ,cons_from_array=function(xs) {;
+return(function(xs) {var x,x0,xi,xl,xr;
+for(var xl=xs.length-1,xi=xl,x0= (null) ;
+xi>=0;
+ --xi)x=xs[xi] ,x0= (cons(x,k(x0) ) ) ;
+return x0} ) .call(this,xs) } ,cons_to_array=function(c) {;
+return reduce(c, [] , (function(x,rest) {return( [x] ) .concat(rest() ) } ) ) } ,k=function(x) {;
+return function() {;
+return x} } ,list=function() {var xs=arguments;
+return cons_from_array(Array.prototype.slice.call( (xs) ) ) } ,reduce=function(xs,x_fn,f) {;
+return xs?xs.reduce?xs.reduce(x_fn,f) 
+:f(xs,x_fn) 
+:x_fn() } ,cons_ctor= (function(it) {return $.merge(it.prototype, {reduce:function(x_fn,f) {var r=this.rest;
+return f.call(this,this.first,function(_) {return(function() {var rest=r() ;
+return rest?rest.reduce(x_fn,f) 
+:x_fn() } ) .call(this) } ) } ,transform_with:function(t) {;
+return map(function(_) {return _.transform_with(t) } ,this) } ,toString:function(force) {;
+return( '' + (this.first) + ' :: ' + (force?this.rest() &&this.rest() .toString(force) 
+: "..." ) + '' ) } ,bound:function() {;
+return this.bound_} ,interpolate:function(l,x) {;
+return list_interpolation(this,l,x) } } ) ,it} ) .call(this, ( (function(first,rest_fn) {return this.first=first,this.rest=rest_fn,this.bound_= (bound_everything) .intersect(this.first.bound() ) ,null} ) ) ) ,map=function(f,xs) {;
+return reduce(xs,k(null) , (function(x,rest) {return cons(f(x) ,rest) } ) ) } ,append=function(xs,ys_f) {;
+return reduce(xs,ys_f,cons) ||ys_f() } ,first=function(xs) {;
+return xs&&xs.first} ,filter=function(f,xs) {;
+return reduce(xs,k(null) , (function(x,rest) {return f(x) ?cons(x,rest) 
+:rest() } ) ) } ,each=function(f,xs) {;
+return reduce(xs,k(xs) , (function(x,rest) {return f(x) ,rest() } ) ) } ,take_outer_while=function(f,xs) {;
+return reduce(xs,k(null) , (function(x,rest) {return f(this) ?cons(x,rest) 
+:null} ) ) } ,descend_while=function(f,xs) {;
+return!xs||xs.reduce?reduce(take_outer_while(f,xs) ,k(null) , (function(x,rest) {return append(descend_while(f,x) ,rest) } ) ) 
+:list(xs) } ,bounded=function(s,box) {;
+return{bound:function() {;
+return box} ,reduce:function(x,f) {;
+return f(s,x) } } } ,x_shadow=function(s,bound) {;
+return bounded(s, (bound) .times( [1/0,1] ) ) } ,y_shadow=function(s,bound) {;
+return bounded(s, (bound) .times( [1,1/0] ) ) } ,x_compressed=function(xs,h) {;
+return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,x_stack=function(xs) {;
+return x_shadow(xs,xs.first.bound() ) } ,y_compressed=function(xs,h) {;
+return(xs) .transform_with(scale( [h/xs.reduce(k(0) , (function(x,rest) {return x.bound() [0] +rest() } ) ) ,1] ) ) } ,y_stack=function(xs) {;
+return y_shadow(xs,xs.first.bound() ) } ,scale_size=function(l,x) {var b=l.bound() ;
+return l.transform_with(composite(translate(b.v) ,scale( [x,x] ) ,translate( [ -b.v[0] , -b.v[1] ] ) ) ) } ,list_interpolation=function(l1,l2,x) {;
+return x===0?l1
+:x===1?l2
+:l1===l2?l1
+:l1===null?scale_size(l2,1-x) 
+:l2===null?scale_size(l1,x) 
+:cons(list_interpolation(l1.first,l2.first,x) .transform_with(composite(l1.bound() .interpolate(l2.bound() ,x) ,l1.bound() .inverse() ) ) ,function(_) {return list_interpolation(l1.rest() ,l2.rest() ,x) } ) } ,no_path=function(b) {;
+return function(c) {;
+return null} } ,rectangle_path=function(b) {;
+return function(c) {;
+return(c.beginPath() ,c.rect(b.v[0] ,b.v[1] ,b.dv[0] ,b.dv[1] ) ) } } ,arc_path=function(b) {var p= (b) .transform_with(cartesian_to_polar) ;
+return function(c) {;
+return( (c.beginPath() ,c.arc(0,0,p.v[0] ,p.v[1] ,p.v[1] +p.dv[1] ,true) ) ,c.arc(0,0,p.v[0] +p.dv[0] ,p.v[1] +p.dv[1] ,p.v[1] ) ) } } } ) .call} } ) .call(this) } ) ;
