@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  f7bd1866f67b4214fcadc591589ba931
-# istate: 457ecf6d1ddb5776f88da90998feaeae
+# state:  001ca9811181305736f7f04009c51363
+# istate: 6372e54a7ce920f746b367a749e13ea8
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1885,7 +1885,7 @@ happens automatically with list structures, which have the property that if xs.r
   You can use the bounded() function to introduce a bounding box onto an object, usually a cons cell, whose bounding box is too large or unknown. This bounding box will be used to figure out when we can
   skip rendering for a particular element. You'll probably use x_stack() and y_stack() more often.
 
-  bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [1/0, 1]),  y_shadow(s, bound) = bounded(s, bound /~times/ [1, 1/0]),
+  bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [infinity, 1]),  y_shadow(s, bound) = bounded(s, bound /~times/ [1, infinity]),
 
   x_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0 /!k, given[x, rest][x.bound()[0] + rest()]), 1]),  x_stack(xs) = x_shadow(xs, xs.first.bound()),
   y_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0 /!k, given[x, rest][x.bound()[0] + rest()]), 1]),  y_stack(xs) = y_shadow(xs, xs.first.bound()),

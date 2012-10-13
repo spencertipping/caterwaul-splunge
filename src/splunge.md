@@ -117,7 +117,7 @@ things that is known to have a specified finite width. When the infinite tower i
 You can use the bounded() function to introduce a bounding box onto an object, usually a cons cell, whose bounding box is too large or unknown. This bounding box will be used to figure out when we can
 skip rendering for a particular element. You'll probably use x_stack() and y_stack() more often.
 
-    bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [1/0, 1]),  y_shadow(s, bound) = bounded(s, bound /~times/ [1, 1/0]),
+    bounded(s, box) = capture [bound() = box, reduce(x, f) = f(s, x)],  x_shadow(s, bound) = bounded(s, bound /~times/ [infinity, 1]),  y_shadow(s, bound) = bounded(s, bound /~times/ [1, infinity]),
 
     x_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0 /!k, given[x, rest][x.bound()[0] + rest()]), 1]),  x_stack(xs) = x_shadow(xs, xs.first.bound()),
     y_compressed(xs, h) = xs /~transform_with/ scale([h / xs.reduce(0 /!k, given[x, rest][x.bound()[0] + rest()]), 1]),  y_stack(xs) = y_shadow(xs, xs.first.bound()),
