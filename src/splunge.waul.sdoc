@@ -174,8 +174,8 @@ projected into the viewspace, and the other describes the spatial transformation
   drag(dv)      = current_chart.slice /-pan/ view_box.inverse().transform(dv) /!chart,  // always pan, don't zoom; in practice you would detect shiftKey or some such and switch between them
   view_box      = centered_in(canvas_element),                                          // makes a [-1, -1] -> [1, 1] box fit inside the canvas
   current_chart = chart([1, 1] /!scale),
-  renderer(c)   = c.path /-map/ descend_while("_.bound().area() > 4".qf, c.transform(data)),
-  $('#my-chart').drag("_(context) -then- context.fill()".qf /-each/ renderer(new_chart),
+  renderer_for  = area_renderer(1, view_box),
+  $('#my-chart').drag("_(context) -then- context.fill()".qf /-each/ renderer_for(new_chart, data),
                       where [context   = context_box(view_box)(the_canvas.getContext('2d')),
                              new_chart = [dd.deltaX, dd.deltaY] /!drag],
                       given [e, dd])
@@ -183,6 +183,12 @@ projected into the viewspace, and the other describes the spatial transformation
 
 You can also track clicks and hovers on individual chart elements by using the find_point() function. Be aware that you'll want to apply this to the transformed data, not the original -- find_point()
 doesn't know about view transformations. (You'll also want to back-transform the screen coordinates using view_box.inverse(), as above in drag(dv).)
+
+  area_renderer(pixel_area, view_box, cond = "_.bound().transform_with(view_box).area() > pixel_area".qf)(chart, data) = chart.path /-map/ data.transform_with(chart),
+
+  chart_fields(path, slice, data) = capture [path = path, slice = slice, data = data, reslice(s, d) = {} / this /-$.merge/ {slice: s, data: d || this.data},
+                                             pan(dv) = this.reslice(this.slice /-pan/ dv), zoom(dv) = this.reslice(this.slice /-zoom/ dv),
+                                             interpolate(chart, x) = this.reslice(
 
   projections     = capture [unit_square_clip = [1, 1] /!scale /!bounding_box,  angular_clip = [1, tau] /!scale /!bounding_box,  arctangent = x_arctangent /-composite/ y_arctangent],
   transformations = capture [radial(projection)(slice)      = polar_to_cartesian / scale([1, Math.PI]) / projection /-composite/ slice /-$.merge/ capture [path = arc_path,       slice = slice],

@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <script src='jquery.min.js'></script>
+  <script src='jquery.event.drag-2.2.js'></script>
+  <script src='caterwaul.min.js'></script>
+  <script src='caterwaul.std.min.js'></script>
+  <script src='caterwaul.ui.min.js'></script>
+  <script src='../caterwaul-splunge.js'></script>
+  <script>
+    $(caterwaul(':all')(function () {
+      renderer(chart)($('#splunge-test')[0].getContext('2d')),
+      where [s           = caterwaul.splunge,
+             data        = s.cons_from_array(n[50] *[[1/x, 1/x] /-s.box/ [0.01, 0.01]] -seq),
+             view        = s.centered_in($('#splunge-test')[0]),
+             chart       = s.transformations.radial(s.projections.arctangent),
+             render_list = chart.path /-map/ descend_while("_.bound().area() > 0.001".qf /-each/ chart.transform(data)),
+
+  </script>
+</head>
+<body style='margin:0;overflow:hidden'>
+  <canvas id='splunge-test' width='1024' height='600'></canvas>
+</body>
+</html>
