@@ -170,33 +170,37 @@ the transformation legitimately breaks the arcs, not due to a bug here).
 # Canvas interaction
 
 This isn't a complete interaction layer, but it gives you some useful functions for common cases. In particular, these functions are focused on maintaining a "current view transformation" for the
-<canvas> element and allowing the user to change it.
+<canvas> element and allowing the user to change it. Note that centered_in() takes just a regular <canvas> element, not a jQuery object.
 
       transformed_delta(t, v, tv = t.transform(v))(dv)                 = t.transform(v /-vplus/ dv) /-vminus/ tv,                                pan(b, dv)  = b /~transform_v/ translate(dv),
       context_box(b)(c)                                                = c.translate(b.v[0], b.v[1]) -then- c.scale(b.dv[0], b.dv[1]) -then- c,  zoom(b, dv) = b /~transform_dv/ scale(dv),
       centered_in(c, w = +c.width, h = +c.height, m = w /-Math.min/ h) = [w >> 1, h >> 1] /-box/ [m >> 1, m >> 1],
 
-# Preset transformations
+# Presets
 
 These allow you to quickly construct different kinds of charts with minimal modification required to change the chart type later on. There are orthogonal kinds of presets. One governs how the data is
 projected into the viewspace, and the other describes the spatial transformations used to render it. For example (using http://threedubmedia.com/code/event/drag):
 
-    chart         = transformations.radial(projections.arctangent),                       // render a ring with both dimensions compressed by an arctangent function
-    drag(dv)      = current_chart.slice /-pan/ view_box.inverse().transform(dv) /!chart,  // always pan, don't zoom; in practice you would detect shiftKey or some such and switch between them
-    view_box      = centered_in(canvas_element),                                          // makes a [-1, -1] -> [1, 1] box fit inside the canvas
-    current_chart = chart([1, 1] /!scale),
-    renderer(c)   = c.path /-map/ descend_while("_.bound().area() > 4".qf, c.transform(data)),
-    $('#my-chart').drag("_(context) -then- context.fill()".qf /-each/ renderer(new_chart),
-                        where [context   = context_box(view_box)(the_canvas.getContext('2d')),
-                               new_chart = [dd.deltaX, dd.deltaY] /!drag],
-                        given [e, dd])
-                  .drag('end', given [e, dd] [current_chart = [dd.deltaX, dd.deltaY] /!drag])
+    // TODO: write example
 
 You can also track clicks and hovers on individual chart elements by using the find_point() function. Be aware that you'll want to apply this to the transformed data, not the original -- find_point()
 doesn't know about view transformations. (You'll also want to back-transform the screen coordinates using view_box.inverse(), as above in drag(dv).)
 
-      projections     = capture [unit_square_clip = [1, 1] /!scale /!bounding_box,  angular_clip = [1, tau] /!scale /!bounding_box,  arctangent = x_arctangent /-composite/ y_arctangent],
-      transformations = capture [radial(projection)(slice)      = polar_to_cartesian / scale([1, Math.PI]) / projection /-composite/ slice /-$.merge/ capture [path = arc_path,       slice = slice],
-                                 rectangular(projection)(slice) = projection /-composite/ slice                                            /-$.merge/ capture [path = rectangle_path, slice = slice]]],
+      chart_ctor = given[transform, path, view, slice, data][this.transform_ = transform, this.path_ = path, this.view_ = view, this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
+                   capture [slice(s, d, v)     = new this.constructor(this.transform_, this.path_, v || this.view_, s || this.slice_, d || this.data_),
+                            interpolate(c, x)  = this.slice(this.transform_, this.path_, this.view_.interpolate(c.view_, x), this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x)),
+                            transformed_data() = this.data_ |~transformed_with| this.transform_ /-composite/ this.slice_,
+                            initialize(c)      = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0]],
+
+                            find(v)            = find_point(this.view_.inverse().transform(v), this.transformed_data()),
+                            render(f, limit)   = f |-each| this.path_ /-map/ descend_while("_.bound().transform_with(vbox).area() > (limit || 1)".qf, where [vbox = this.view_], this.transformed_data()),
+                            delta(v)           = transformed_delta(this.view_ /-composite/ this.transform_, v),
+                            slice_delta(dv, f) = this.slice_ /-f/ dv /!this.slice],
+
+      rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(unit_bound   /-composite/ options.transform, rectangle_path, options.view, options.slice, data),
+      radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(radial_bound /-composite/ options.transform, arc_path,       options.view, options.slice, data),
+
+      unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),              rectangular_defaults = {transform: x_arctangent,                                   slice: [1, 1] /!scale},
+      radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon]),  radial_defaults      = {transform: [1, Math.PI] /!scale /-composite/ x_arctangent, slice: [1, 1] /!scale}],
 
       using [caterwaul.numeric_offline_2]});
