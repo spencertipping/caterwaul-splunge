@@ -2,20 +2,24 @@
 <html>
 <head>
   <script src='jquery.min.js'></script>
-  <script src='jquery.event.drag-2.2.js'></script>
   <script src='caterwaul.min.js'></script>
   <script src='caterwaul.std.min.js'></script>
   <script src='caterwaul.ui.min.js'></script>
   <script src='../caterwaul-splunge.js'></script>
   <script>
     $(caterwaul(':all')(function () {
-      renderer(chart)($('#splunge-test')[0].getContext('2d')),
-      where [s           = caterwaul.splunge,
-             data        = s.cons_from_array(n[50] *[[1/x, 1/x] /-s.box/ [0.01, 0.01]] -seq),
-             view        = s.centered_in($('#splunge-test')[0]),
-             chart       = s.transformations.radial(s.projections.arctangent),
-             render_list = chart.path /-map/ descend_while("_.bound().area() > 0.001".qf /-each/ chart.transform(data)),
-
+      $('#splunge-test').mousemove(render(chart.slice_delta(chart.delta([last_x, last_y])([e.pageX - 512, e.pageY - 300]), s.pan)), given.e)
+                        .mousedown(last_x = e.pageX, last_y = e.pageY, given.e),
+      where [s         = caterwaul.splunge,
+             last_x    = 0,
+             last_y    = 0,
+             chart     = s.rectangular_chart(s.cons_from_array(n[200] *[xi / [x * 0.07, x * 0.7] /-s.rectangle/ [0.01, 0.5]] -seq), {view: s.centered_in($('#splunge-test')[0]),
+                                                                                                                                     transform: s.x_arctangent /-s.composite/ s.y_arctangent}),
+             render(c) = console.log('#{c.slice_}') -then-
+                         c.with_context($('#splunge-test')[0].getContext('2d'),
+                                        given[context] [context.fillStyle = 'white', context.fillRect(-1, -1, 2, 2),
+                                                        context.fillStyle = 'green',
+                                                        this.render("_(context), context.closePath(), context.fill()".qf)])]}));
   </script>
 </head>
 <body style='margin:0;overflow:hidden'>

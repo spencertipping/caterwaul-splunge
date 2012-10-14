@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  0fbd0d42dd04291a374af2fce144240a
-# istate: 67d1ef8fcdaf0b908b71ce4211ee172f
+# state:  66f30151087c35e75b24cce5cb6d16c7
+# istate: c34aa94e00ec5d922c7cd5abd0e7a981
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -724,7 +724,8 @@ sub waulfile {file::write("src/$_[0].waul.sdoc", retrieve("sdoc::waul::$_[0]"));
               file::write("src/$_[0].md",        retrieve("markdown::waul::$_[0]"))}
 
 waulfile $_ for qw/splunge/;
-sh('waul -e deps/numeric-offline-2.js src/splunge.waul.sdoc') unless $$options{-W};
+sh('waul -e deps/numeric-offline-2.js src/splunge.waul.sdoc'),
+sh("sed -ri 's/;/\\n;/g' src/splunge.js") unless $$options{-W};
 
 file::write('caterwaul-splunge.js', cat(qw|deps/numeric-offline-2.js src/splunge.js|));
 file::write('splunge.js',           cat(qw|deps/caterwaul.core.min.js caterwaul-splunge.js|));
@@ -1842,7 +1843,7 @@ transformations.
 
                       transform_v_with(t) = t.transform(this.v) /-box/ this.dv,  transform_dv_with(t) = this.v /-box/ t.transform(this.dv),
 
-                      max(b)    = box(this.v /-vmax/ b.v, this.dv),                  toString()        = '[[#{this.v[0]}, #{this.v[1]}] -> [#{this.dv[0]}, #{this.dv[1]}]]',
+                      max(b)    = box(this.v /-vmax/ b.v, this.dv),                  toString()        = '[#{this.v[0]},#{this.v[1]} -> #{this.dv[0]},#{this.dv[1]}]',
                       intern(v) = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,  map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
                       plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),   transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
                       scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),     bound()           = this,
@@ -1939,8 +1940,8 @@ Canvas interaction.
 This isn't a complete interaction layer, but it gives you some useful functions for common cases. In particular, these functions are focused on maintaining a "current view transformation" for the
 <canvas> element and allowing the user to change it. Note that centered_in() takes just a regular <canvas> element, not a jQuery object.
 
-  transformed_delta(t, v, tv = t.transform(v))(dv)                 = t.transform(v /-vplus/ dv) /-vminus/ tv,                                pan(b, dv)  = b /~transform_v/ translate(dv),
-  context_box(b)(c)                                                = c.translate(b.v[0], b.v[1]) -then- c.scale(b.dv[0], b.dv[1]) -then- c,  zoom(b, dv) = b /~transform_dv/ scale(dv),
+  transformed_delta(t, v, tv = t.transform(v))(dv)                 = t.transform(v /-vplus/ dv) /-vminus/ tv,                                pan(b, dv)  = b /~transform_v_with/ translate(dv),
+  context_box(b)(c)                                                = c.translate(b.v[0], b.v[1]) -then- c.scale(b.dv[0], b.dv[1]) -then- c,  zoom(b, dv) = b /~transform_dv_with/ scale(dv),
   centered_in(c, w = +c.width, h = +c.height, m = w /-Math.min/ h) = [w >> 1, h >> 1] /-box/ [m >> 1, m >> 1],
 
 Presets.
@@ -1953,21 +1954,23 @@ You can also track clicks and hovers on individual chart elements by using the f
 doesn't know about view transformations. (You'll also want to back-transform the screen coordinates using view_box.inverse(), as above in drag(dv).)
 
   chart_ctor = given[transform, path, view, slice, data][this.transform_ = transform, this.path_ = path, this.view_ = view, this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
-               capture [slice(s, d, v)     = new this.constructor(this.transform_, this.path_, v || this.view_, s || this.slice_, d || this.data_),
-                        interpolate(c, x)  = this.slice(this.transform_, this.path_, this.view_.interpolate(c.view_, x), this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x)),
-                        transformed_data() = this.data_ |~transformed_with| this.transform_ /-composite/ this.slice_,
-                        initialize(c)      = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0]],
+               capture [slice(s, d, v)       = new this.constructor(this.transform_, this.path_, v || this.view_, s || this.slice_, d || this.data_),
+                        interpolate(c, x)    = this.slice(this.transform_, this.path_, this.view_.interpolate(c.view_, x), this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x)),
+                        transformed_data()   = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
+                        visible_data(area)   = descend_while("_.bound().transform_with(vbox).area() > area".qf, where [vbox = this.view_], this.transformed_data()),
+                        transform_context(c) = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0]],
 
-                        find(v)            = find_point(this.view_.inverse().transform(v), this.transformed_data()),
-                        render(f, limit)   = f |-each| this.path_ /-map/ descend_while("_.bound().transform_with(vbox).area() > (limit || 1)".qf, where [vbox = this.view_], this.transformed_data()),
-                        delta(v)           = transformed_delta(this.view_ /-composite/ this.transform_, v),
-                        slice_delta(dv, f) = this.slice_ /-f/ dv /!this.slice],
+                        with_context(c, f)   = c.save() -then- r /eq [f.call(this, this.transform_context(c))] -then- c.restore() -then- r -where [r = null],
+                        render(f, limit)     = "f(p(_))".qf -where [p = this.path_] |-each| this.visible_data(limit || 1),
+                        find(v)              = find_point(this.view_.inverse().transform(v), this.transformed_data()),
+                        delta(v)             = transformed_delta(composite(this.view_, this.transform_, this.slice_).inverse(), v),
+                        slice_delta(dv, f)   = this.slice(this.slice_ /-f/ dv)],
 
-  rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(unit_bound   /-composite/ options.transform, rectangle_path, options.view, options.slice, data),
-  radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(radial_bound /-composite/ options.transform, arc_path,       options.view, options.slice, data),
+  rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.view, options.slice, data),
+  radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.view, options.slice, data),
 
-  unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),              rectangular_defaults = {transform: x_arctangent,                                   slice: [1, 1] /!scale},
-  radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon]),  radial_defaults      = {transform: [1, Math.PI] /!scale /-composite/ x_arctangent, slice: [1, 1] /!scale}],
+  unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),              rectangular_defaults = {transform: x_arctangent,                                 slice: [1, 1] /!scale},
+  radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon]),  radial_defaults      = {transform: polar_to_cartesian /-composite/ x_arctangent, slice: [1, 1] /!scale}],
 
   using [caterwaul.numeric_offline_2]});
 
