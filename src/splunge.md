@@ -37,12 +37,13 @@ http://en.wikipedia.org/wiki/Machine_epsilon for ways to compute it.
       x_tangent          = capture [transform = componentwise(scaled_tan, "_".qf), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, "_".qf), inverse() = x_tangent],
       y_tangent          = capture [transform = componentwise("_".qf, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise("_".qf, scaled_atan), inverse() = y_tangent],
       polar_to_cartesian = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = cartesian_to_polar],
-      cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, (t + tau) % tau],               inverse() = polar_to_cartesian],
+      cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],               inverse() = polar_to_cartesian],
 
       bounding_box(b)    = capture [transform(v) = b /~intern/ v, inverse() = identity_transform],  identity_transform = capture [transform(v) = v, inverse() = this],
 
       // Arguments to composite() are ordered like composed functions: composite(t1, t2, t3).transform(x) = t1.transform(t2.transform(t3.transform(x)))
-      composite(ts = arguments) = capture [transform(v) = ts /! [v] [x.transform(x0)] -seq, inverse() = this.inverse_ -dcq- composite.apply(this, +ts *[x.inverse()] -seq) /se[it.inverse_ = this]],
+      composite(ts = arguments) = capture [transform(v) = ts /! [v] [x.transform(x0)] -seq,
+                                           inverse()    = this.inverse_ -dcq- composite.apply(this, +ts *[xs[xl - xi - 1].inverse()] -seq) /se[it.inverse_ = this]],
 
 # Boxes and rectangles
 
@@ -73,7 +74,7 @@ vertically. You can also use it to stack descendants, though if your charts are 
                         intern(v) = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv,  map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
                         plus(b)   = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),   transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
                         scale(x)  = box(this.v /-vscale/ x,  this.dv /-vscale/ x),     bound()           = this,
-                        times(v)  = box(this.v, v /-vtimes/ this.dv),                  inverse()         = box(this.v /-vscale/ -1, [1 / this.dv[0], 1 / this.dv[1]])],
+                        times(v)  = box(this.v, v /-vtimes/ this.dv),                  inverse()         = box([-this.v[0] / this.dv[0], -this.v[1] / this.dv[1]], [1 / this.dv[0], 1 / this.dv[1]])],
 
     box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-infinity, -infinity], [2 * infinity, 2 * infinity]),
     rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([        0,         0], [           0,            0]),
@@ -172,37 +173,26 @@ the transformation legitimately breaks the arcs, not due to a bug here).
 This isn't a complete interaction layer, but it gives you some useful functions for common cases. In particular, these functions are focused on maintaining a "current view transformation" for the
 <canvas> element and allowing the user to change it. Note that centered_in() takes just a regular <canvas> element, not a jQuery object.
 
-      transformed_delta(t, v, tv = t.transform(v))(dv)                 = t.transform(v /-vplus/ dv) /-vminus/ tv,                                pan(b, dv)  = b /~transform_v_with/ translate(dv),
-      context_box(b)(c)                                                = c.translate(b.v[0], b.v[1]) -then- c.scale(b.dv[0], b.dv[1]) -then- c,  zoom(b, dv) = b /~transform_dv_with/ scale(dv),
+      transformed_delta(t, v, tv = t.transform(v))(dv)                 = t.transform(v /-vplus/ dv) /-vminus/ tv,                                pan(b, dv)  = b /~transform_v_with/ translate(dv).inverse(),
+      context_box(b)(c)                                                = c.translate(b.v[0], b.v[1]) -then- c.scale(b.dv[0], b.dv[1]) -then- c,  zoom(b, dv) = b /~transform_dv_with/ scale(dv).inverse(),
       centered_in(c, w = +c.width, h = +c.height, m = w /-Math.min/ h) = [w >> 1, h >> 1] /-box/ [m >> 1, m >> 1],
-
-# Presets
-
-These allow you to quickly construct different kinds of charts with minimal modification required to change the chart type later on. There are orthogonal kinds of presets. One governs how the data is
-projected into the viewspace, and the other describes the spatial transformations used to render it. For example (using http://threedubmedia.com/code/event/drag):
-
-    // TODO: write example
-
-You can also track clicks and hovers on individual chart elements by using the find_point() function. Be aware that you'll want to apply this to the transformed data, not the original -- find_point()
-doesn't know about view transformations. (You'll also want to back-transform the screen coordinates using view_box.inverse(), as above in drag(dv).)
 
       chart_ctor = given[transform, path, view, slice, data][this.transform_ = transform, this.path_ = path, this.view_ = view, this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
                    capture [slice(s, d, v)       = new this.constructor(this.transform_, this.path_, v || this.view_, s || this.slice_, d || this.data_),
-                            interpolate(c, x)    = this.slice(this.transform_, this.path_, this.view_.interpolate(c.view_, x), this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x)),
+                            interpolate(c, x)    = this.slice(this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x), this.view_.interpolate(c.view_, x)),
                             transformed_data()   = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
                             visible_data(area)   = descend_while("_.bound().transform_with(vbox).area() > area".qf, where [vbox = this.view_], this.transformed_data()),
-                            transform_context(c) = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0]],
+                            transform_context(c) = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0] /-Math.max/ this.view_.dv[1]],
+                            transform()          = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
 
                             with_context(c, f)   = c.save() -then- r /eq [f.call(this, this.transform_context(c))] -then- c.restore() -then- r -where [r = null],
                             render(f, limit)     = "f(p(_))".qf -where [p = this.path_] |-each| this.visible_data(limit || 1),
-                            find(v)              = find_point(this.view_.inverse().transform(v), this.transformed_data()),
-                            delta(v)             = transformed_delta(composite(this.view_, this.transform_, this.slice_).inverse(), v),
-                            slice_delta(dv, f)   = this.slice(this.slice_ /-f/ dv)],
+                            find(v)              = find_point(this.transform().inverse().transform(v), this.data_)],
 
       rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.view, options.slice, data),
       radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.view, options.slice, data),
 
-      unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),              rectangular_defaults = {transform: x_arctangent,                                 slice: [1, 1] /!scale},
-      radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon]),  radial_defaults      = {transform: polar_to_cartesian /-composite/ x_arctangent, slice: [1, 1] /!scale}],
+      unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),              rectangular_defaults = {transform: x_arctangent,                                                       slice: [1, 1] /!scale},
+      radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon]),  radial_defaults      = {transform: polar_to_cartesian / scale([1, Math.PI]) /-composite/ x_arctangent, slice: [1, 1] /!scale}],
 
       using [caterwaul.numeric_offline_2]});
