@@ -8,9 +8,9 @@
   <script src='../caterwaul-splunge.js'></script>
   <script>
     $(caterwaul(':all')(function () {
-      $('#splunge-test').mousemove(render(chart.slice(chart.slice_ /-s.pan/ s.transformed_delta(chart.transform().inverse(), [1, 1])([e.pageX - 512, e.pageY - 300]))), given.e),
+      $('#splunge-test').mousemove(render(chart.slice(chart.transform().inverse().transform([e.pageX, e.pageY]) /-s.box/ [1, 1])), given.e),
       where [s         = caterwaul.splunge,
-             chart     = s.radial_chart(s.cons_from_array(n[10] *y[s.cons_from_array(n[20] *[xi / [x * 0.4, y * 0.15] /-s.rectangle/ [0.01, 0.01]] -seq)] -seq),
+             chart     = s.radial_chart(s.cons_from_array(n[20] *y[s.cons_from_array(n[20] *[xi / [x * 0.1, y * 0.15] /-s.rectangle/ [0.01, 0.01]] -seq)] -seq),
                                         {view:      s.centered_in($('#splunge-test')[0]),
                                          transform: s.polar_to_cartesian}),
              render(c) = console.log('#{c.slice_}') -then-
