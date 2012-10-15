@@ -10,10 +10,9 @@
     $(caterwaul(':all')(function () {
       $('#splunge-test').mousemove(render(chart.slice(chart.transform().inverse().transform([e.pageX, e.pageY]) /-s.box/ [1, 1])), given.e),
       where [s         = caterwaul.splunge,
-             chart     = s.radial_chart(s.cons_from_array(n[20] *y[s.cons_from_array(n[20] *[xi / [x * 0.1, y * 0.15] /-s.rectangle/ [0.01, 0.01]] -seq)] -seq),
+             chart     = s.radial_chart(s.cons_from_array(n[50] *y[s.cons_from_array(n[50] *[xi / [x * 0.1, y * 0.15] /-s.rectangle/ [0.01, 0.01]] -seq)] -seq),
                                         {view: s.centered_in($('#splunge-test')[0])}),
-             render(c) = console.log('#{c.slice_}') -then-
-                         c.with_context($('#splunge-test')[0].getContext('2d'),
+             render(c) = c.with_context($('#splunge-test')[0].getContext('2d'),
                                         given.context [context.fillStyle = 'white', context.fillRect(-2, -2, 4, 4),
                                                        context.fillStyle = 'green', this.render("_(context), context.closePath(), context.fill()".qf, 1000)])]}));
   </script>
