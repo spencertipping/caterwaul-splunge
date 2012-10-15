@@ -11,8 +11,7 @@
       $('#splunge-test').mousemove(render(chart.slice(chart.transform().inverse().transform([e.pageX, e.pageY]) /-s.box/ [1, 1])), given.e),
       where [s         = caterwaul.splunge,
              chart     = s.radial_chart(s.cons_from_array(n[20] *y[s.cons_from_array(n[20] *[xi / [x * 0.1, y * 0.15] /-s.rectangle/ [0.01, 0.01]] -seq)] -seq),
-                                        {view:      s.centered_in($('#splunge-test')[0]),
-                                         transform: s.polar_to_cartesian}),
+                                        {view: s.centered_in($('#splunge-test')[0])}),
              render(c) = console.log('#{c.slice_}') -then-
                          c.with_context($('#splunge-test')[0].getContext('2d'),
                                         given.context [context.fillStyle = 'white', context.fillRect(-2, -2, 4, 4),

@@ -22,20 +22,20 @@ which linearly transforms space such that some bounding box is mapped to the uni
 Transformations provide two methods, transform(v) and inverse(). t.inverse().inverse().transform(v) should be equivalent to t.transform(v), though t.inverse().transform(t.transform(v)) might not be
 equivalent to v in some cases.
 
-Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the cartesian_to_polar coordinate transforms have Y components that vary from 0 to τ. This is deliberate. It's written this way
+Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the cartesian_to_polar coordinate transforms have Y components that vary from -π to π. This is deliberate. It's written this way
 so that you can use the cartesian_to_polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a
 scale(x, x) transformation to make it fit inside a 2x by 2x box centered at the origin.
 
 Infinity isn't really infinity. Instead, it's a number that corresponds to the reciprocal of the machine epsilon (FP rounding error). This means that "infinite" values can be worked with normally. See
 http://en.wikipedia.org/wiki/Machine_epsilon for ways to compute it.
 
-  tau     = Math.PI * 2,            atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,        clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
-  epsilon = 2.220446049250313e-16,  infinity   = 1 / epsilon,  scaled_tan(x)  = clip(x / atan_scale) /!Math.tan,  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
+  tau     = Math.PI * 2,            atan_scale = 2 / Math.PI,  scaled_atan(x) = Math.atan(x) * atan_scale,       clip(x)                  = x /-Math.max/ -1 /-Math.min/ 1,
+  epsilon = 2.220446049250313e-16,  infinity   = 1 / epsilon,  scaled_tan(x)  = Math.tan(clip(x) / atan_scale),  componentwise(f1, f2)(v) = [f1(v[0]), f2(v[1])],
 
   x_tangent          = capture [transform = componentwise(scaled_tan, "_".qf), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, "_".qf), inverse() = x_tangent],
   y_tangent          = capture [transform = componentwise("_".qf, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise("_".qf, scaled_atan), inverse() = y_tangent],
   polar_to_cartesian = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = cartesian_to_polar],
-  cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],               inverse() = polar_to_cartesian],
+  cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],                             inverse() = polar_to_cartesian],
 
   bounding_box(b)    = capture [transform(v) = b /~intern/ v, inverse() = identity_transform],  identity_transform = capture [transform(v) = v, inverse() = this],
 

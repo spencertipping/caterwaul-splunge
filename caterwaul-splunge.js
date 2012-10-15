@@ -16,7 +16,7 @@ caterwaul.module( 'splunge' , (function (e) {var result= ( function ($) { (funct
 ; return $.splunge = (function () {var tau = Math.PI * 2, atan_scale = 2 / Math.PI, scaled_atan =function (x) { 
 ; return Math.atan(x) * atan_scale} , clip =function (x) { 
 ; return Math.min(Math.max( x, -1) , 1)} , epsilon = 2.220446049250313e-16, infinity = 1 / epsilon, scaled_tan =function (x) { 
-; return Math.tan( clip(x / atan_scale))} , componentwise =function (f1, f2) { 
+; return Math.tan(clip(x) / atan_scale)} , componentwise =function (f1, f2) { 
 ; return function (v) { 
 ; return [f1(v[0]) , f2(v[1])]}} , x_tangent = {transform: componentwise(scaled_tan,function (_) {return _}) , inverse:function () { 
 ; return x_arctangent}} , x_arctangent = {transform: componentwise(scaled_atan,function (_) {return _}) , inverse:function () { 
