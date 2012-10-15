@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  ba0088c3a59301ba6e11d0fd54d6def0
-# istate: 4b783bee4f5e1943f4e3ed30555d66a1
+# state:  25031163880f98b86487241b1d379cac
+# istate: acce71c29a856890325df6b5ee6f76f7
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1857,6 +1857,8 @@ Infinite data sets.
 You can render and interact with infinite data sets provided that you specify some limit on what gets rendered. Usually this involves either things being out of bounds or things being too small to be
 visible. In either case, you need a way to infer properties of some elements from properties of others; generally this means using a hierarchy and some kind of induction against that hierarchy. This
 happens automatically with list structures, which have the property that if xs.rest() = y, then xs.bound() contains y.bound().
+
+TODO: Rewrite all of this. I should have thought of it sooner, but using recursive reduce() calls limits the number of data elements that can be processed at all.
 
   Transformation and traversal.
   List data is designed to be transformed incrementally. Traversal is expressed as a lazy left reduction with a lazily-computed rightmost value. For example:

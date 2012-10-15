@@ -80,6 +80,8 @@ You can render and interact with infinite data sets provided that you specify so
 visible. In either case, you need a way to infer properties of some elements from properties of others; generally this means using a hierarchy and some kind of induction against that hierarchy. This
 happens automatically with list structures, which have the property that if xs.rest() = y, then xs.bound() contains y.bound().
 
+TODO: Rewrite all of this. I should have thought of it sooner, but using recursive reduce() calls limits the number of data elements that can be processed at all.
+
   Transformation and traversal.
   List data is designed to be transformed incrementally. Traversal is expressed as a lazy left reduction with a lazily-computed rightmost value. For example:
 
