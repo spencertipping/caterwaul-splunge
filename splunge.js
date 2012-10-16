@@ -60,8 +60,8 @@ caterwaul.module( 'splunge' , (function (e) {var result= ( function ($) { (funct
 ; return(function () {var c1 =vmin( this.v, b.v) , c2 =vmax(vplus( this.v, this.dv) ,vplus( b.v, b.dv)) 
 ; return box(c1,vminus( c2, c1))}) .call(this)} , transform_v_with:function (t) { 
 ; return box( t.transform(this.v) , this.dv)} , transform_dv_with:function (t) { 
-; return box( this.v, t.transform(this.dv))} , max:function (b) { 
-; return box(vmax(this.v, b.v) , this.dv)} , toString:function () { 
+; return box( this.v, t.transform(this.dv))} , children:function () { 
+; return []} , toString:function () { 
 ; return( '[' + (this.v[0]) + ',' + (this.v[1]) + ' -> ' + (this.dv[0]) + ',' + (this.dv[1]) + ']')} , intern:function (v) { 
 ; return vmin(vmax( v, this.v) ,vplus( this.v, this.dv))} , map_corners:function (f) { 
 ; return(function () {var c1 = f(this.v) , c2 = f(vplus(this.v, this.dv)) 
@@ -75,43 +75,40 @@ caterwaul.module( 'splunge' , (function (e) {var result= ( function ($) { (funct
 ; return new box_ctor(v, dv)} , translate =function (v) { 
 ; return new box_ctor(v, [1, 1])} , bound_everything = box( [ -infinity, -infinity] , [2 * infinity, 2 * infinity]) , rectangle =function (data, v, dv) {var b = box(v, dv) 
 ; return( b.data =data, b)} , scale =function (v) { 
-; return new box_ctor( [0, 0] , v)} , bound_nothing = box( [ 0, 0] , [ 0, 0]) , cons =function (first, rest_fn) { 
-; return new cons_ctor(first, rest_fn)} , cons_from_array =function (xs) { 
-; return(function (xs) {var x, x0, xi, xl, xr
-;for (var xl = xs.length - 1, xi = xl, x0 = (null) 
-; xi >= 0
-; --xi) x = xs[xi] , x0 = (cons(x, k(x0))) 
-; return x0}) .call(this, xs)} , cons_to_array =function (c) { 
-; return reduce(c, [] , (function (x, rest) {return( [x]) .concat( rest())}))} , k =function (x) { 
-; return function () { 
-; return x}} , list =function () {var xs = arguments
-; return cons_from_array(Array.prototype.slice.call( (xs)))} , reduce =function (xs, x_fn, f) { 
-; return xs ? xs.reduce ? xs.reduce(x_fn, f): f(xs, x_fn): x_fn()} , cons_ctor = (function (it) {return $.merge( it.prototype, {reduce:function (x_fn, f) {var r = this.rest
-; return f.call(this, this.first,function (_) {return(function () {var rest = r() 
-; return rest ? rest.reduce(x_fn, f): x_fn()}) .call(this)})} , transform_with:function (t) { 
-; return map(function (_) {return _.transform_with(t)} , this)} , toString:function (force) { 
-; return( '' + (this.first) + ' :: ' + (force ? this.rest() && this.rest() .toString(force): "...") + '')} , bound:function () { 
-; return this.bound_} , interpolate:function (l, x) { 
-; return list_interpolation(this, l, x)}}) , it}) .call(this, ( (function (first, rest_fn) {return this.first = first, this.rest = rest_fn, this.bound_ = ( bound_everything) .max( this.first.bound()) , null}))) , map =function (f, xs) { 
-; return reduce(xs,k( null) , (function (x, rest) {return cons(f(x) , rest)}))} , append =function (xs, ys_f) { 
-; return reduce(xs, ys_f, cons) || ys_f()} , first =function (xs) { 
-; return xs && xs.first} , filter =function (f, xs) { 
-; return reduce(xs,k( null) , (function (x, rest) {return f(x) ? cons(x, rest): rest()}))} , each =function (f, xs) { 
-; return reduce(xs,k( xs) , (function (x, rest) {return f(x) , rest()}))} , take_outer_while =function (f, xs) { 
-; return reduce(xs,k( null) , (function (x, rest) {return f(this) ? cons(x, rest): null}))} , descend_while =function (f, xs) { 
-; return !xs || xs.reduce ? reduce(take_outer_while(f, xs) ,k( null) , (function (x, rest) {return append(descend_while(f, x) , rest)})): list(xs)} , find_point =function (v, xs) { 
-; return first( descend_while(function (_) {return _.bound() .contains(v)} , xs))} , bounded =function (s, box) { 
+; return new box_ctor( [0, 0] , v)} , bound_nothing = box( [ 0, 0] , [ 0, 0]) , by =function (f) { 
+; return function (a, b) { 
+; return f(a) - f(b)}} , dot_ordering =function (bound, x) {var b = x.bound() 
+; return vdot(vminus( b.v, bound.v) , bound.dv)} , bounded =function (xs) { 
+; return(function () {var bound = (function (xs) {var x, x0, xi, xl, xr
+;for (var x0 = xs[0] , xi = 1, xl = xs.length
+; xi < xl
+; ++xi) x = xs[xi] , x0 = ( (x0) .union( x)) 
+; return x0}) .call(this, (function (xs) {var x, x0, xi, xl, xr
+;for (var xr = new xs.constructor() , xi = 0, xl = xs.length
+; xi < xl
+; ++xi) x = xs[xi] , xr.push( (x.bound())) 
+; return xr}) .call(this, xs)) , children = ( xs.slice()) .sort( by(function (_) {return dot_ordering(bound, _)})) 
 ; return{bound:function () { 
-; return box} , reduce:function (x, f) { 
-; return f(s, x)}}} , x_shadow =function (s, bound) { 
-; return bounded(s, ( bound) .times( [infinity, 1]))} , y_shadow =function (s, bound) { 
-; return bounded(s, ( bound) .times( [1, infinity]))} , x_compressed =function (xs, h) { 
-; return( xs) .transform_with( scale( [h / xs.reduce(k(0) , (function (x, rest) {return x.bound() [0] + rest()})) , 1]))} , x_stack =function (xs) { 
-; return x_shadow(xs, xs.first.bound())} , y_compressed =function (xs, h) { 
-; return( xs) .transform_with( scale( [h / xs.reduce(k(0) , (function (x, rest) {return x.bound() [0] + rest()})) , 1]))} , y_stack =function (xs) { 
-; return y_shadow(xs, xs.first.bound())} , scale_size =function (l, x) {var b = l.bound() 
-; return l.transform_with(composite(translate(b.v) , scale( [x, x]) , translate( [ -b.v[0] , -b.v[1]])))} , list_interpolation =function (l1, l2, x) { 
-; return x === 0 ? l1: x === 1 ? l2: l1 === l2 ? l1: l1 === null ? scale_size(l2, 1 - x): l2 === null ? scale_size(l1, x):cons( list_interpolation(l1.first, l2.first, x) .transform_with(composite(l1.bound() .interpolate(l2.bound() , x) , l1.bound() .inverse())) ,function (_) {return list_interpolation(l1.rest() , l2.rest() , x)})} , no_path =function (b) { 
+; return bound} , children:function () { 
+; return children} , transform_with:function (t) { 
+; return bounded( (function (xs) {var x, x0, xi, xl, xr
+;for (var xr = new xs.constructor() , xi = 0, xl = xs.length
+; xi < xl
+; ++xi) x = xs[xi] , xr.push( (x.transform_with(t))) 
+; return xr}) .call(this,this.children()))} , interpolate:function (b, x) { 
+; return bounded_interpolation(this, b, x)}}}) .call(this)} , find_point =function (v, b) { 
+; return( b.bound()) .contains( v) ? (function (xs) {var x, x0, xi, xl, xr
+;for (var x = xs[0] , xi = 0, xl = xs.length, x1
+; xi < xl
+; ++xi) {x = xs[xi] 
+; if (x1 = (find_point(v, x))) return x1} return false}) .call(this, b.children()) || b: null} , scale_size =function (l, x) {var b = l.bound() 
+; return l.transform_with(composite(translate(b.v) , scale( [x, x]) , translate( [ -b.v[0] , -b.v[1]])))} , bounded_interpolation =function (l1, l2, x) { 
+; return x === 0 ? l1: x === 1 ? l2: l1 === l2 ? l1: bounded( [scale_size(l1, 1 - x) , scale_size(l2, x)])} , descend_while =function (f, x) { 
+; return f(x) ? ( [x]) .concat( ( (function (xs) {var x, x0, xi, xl, xr
+;for (var xr = new xs.constructor() , xi = 0, xl = xs.length
+; xi < xl
+; ++xi) x = xs[xi] , xr.push.apply(xr, Array.prototype.slice.call( (descend_while(f, x)))) 
+; return xr}) .call(this, x.children()))): []} , no_path =function (b) { 
 ; return function (c) { 
 ; return null}} , rectangle_path =function (b) { 
 ; return function (c) { 
@@ -136,12 +133,15 @@ caterwaul.module( 'splunge' , (function (e) {var result= ( function ($) { (funct
 ; return this.composite_transform_ !== void 0 ? this.composite_transform_: this.composite_transform_ = composite(this.view_, this.transform_, this.slice_)} , with_context:function (c, f) { 
 ; return(function () {var r = null
 ; return( ( ( c.save() , r =f.call(this, this.transform_context(c))) , c.restore()) , r)}) .call(this)} , render:function (f, limit) { 
-; return each( (function () {var p = this.path_
-; return function (_) {return f(p(_))}}) .call(this) , this.visible_data(limit || 1))} , find:function (v) { 
+; return(function (xs) {var x, x0, xi, xl, xr
+;for (var xi = 0, xl = xs.length
+; xi < xl
+; ++xi) x = xs[xi] , (x.children() .length || f(this.path_(x.bound()))) 
+; return xs}) .call(this, this.visible_data(limit || 1))} , find:function (v) { 
 ; return find_point(this.transform() .inverse() .transform(v) , this.data_)}}) , it}) .call(this, ( (function (transform, path, view, slice, data) {return this.transform_ = transform, this.path_ = path, this.view_ = view, this.slice_ = slice, this.data_ = data, null}))) , rectangular_chart =function (data, options) {var options =$.merge( {} , rectangular_defaults, options) 
 ; return new chart_ctor(options.transform, rectangle_path, options.view, options.slice, data)} , radial_chart =function (data, options) {var options =$.merge( {} , radial_defaults, options) 
 ; return new chart_ctor(options.transform, arc_path, options.view, options.slice, data)} , unit_bound = bounding_box(box( [ -1, -1] , [2, 2])) , rectangular_defaults = {transform: x_arctangent, slice:scale( [1, 1])} , radial_bound = bounding_box(box( [ -1, -Math.PI] , [2, tau - epsilon])) , radial_defaults = {transform:composite( polar_to_cartesian, scale( [1, Math.PI]) , x_arctangent) , slice:scale( [1, 1])} 
-; return{ tau: tau, atan_scale: atan_scale, scaled_atan: scaled_atan, clip: clip, epsilon: epsilon, infinity: infinity, scaled_tan: scaled_tan, componentwise: componentwise, x_tangent: x_tangent, x_arctangent: x_arctangent, y_tangent: y_tangent, y_arctangent: y_arctangent, polar_to_cartesian: polar_to_cartesian, cartesian_to_polar: cartesian_to_polar, bounding_box: bounding_box, identity_transform: identity_transform, composite: composite, box_ctor: box_ctor, box: box, translate: translate, bound_everything: bound_everything, rectangle: rectangle, scale: scale, bound_nothing: bound_nothing, cons: cons, cons_from_array: cons_from_array, cons_to_array: cons_to_array, k: k, list: list, reduce: reduce, cons_ctor: cons_ctor, map: map, append: append, first: first, filter: filter, each: each, take_outer_while: take_outer_while, descend_while: descend_while, find_point: find_point, bounded: bounded, x_shadow: x_shadow, y_shadow: y_shadow, x_compressed: x_compressed, x_stack: x_stack, y_compressed: y_compressed, y_stack: y_stack, scale_size: scale_size, list_interpolation: list_interpolation, no_path: no_path, rectangle_path: rectangle_path, arc_path: arc_path, transformed_delta: transformed_delta, pan: pan, context_box: context_box, zoom: zoom, centered_in: centered_in, chart_ctor: chart_ctor, rectangular_chart: rectangular_chart, radial_chart: radial_chart, unit_bound: unit_bound, rectangular_defaults: rectangular_defaults, radial_bound: radial_bound, radial_defaults: radial_defaults}}) .call(this)}) .call(this)}) 
+; return{ tau: tau, atan_scale: atan_scale, scaled_atan: scaled_atan, clip: clip, epsilon: epsilon, infinity: infinity, scaled_tan: scaled_tan, componentwise: componentwise, x_tangent: x_tangent, x_arctangent: x_arctangent, y_tangent: y_tangent, y_arctangent: y_arctangent, polar_to_cartesian: polar_to_cartesian, cartesian_to_polar: cartesian_to_polar, bounding_box: bounding_box, identity_transform: identity_transform, composite: composite, box_ctor: box_ctor, box: box, translate: translate, bound_everything: bound_everything, rectangle: rectangle, scale: scale, bound_nothing: bound_nothing, by: by, dot_ordering: dot_ordering, bounded: bounded, find_point: find_point, scale_size: scale_size, bounded_interpolation: bounded_interpolation, descend_while: descend_while, no_path: no_path, rectangle_path: rectangle_path, arc_path: arc_path, transformed_delta: transformed_delta, pan: pan, context_box: context_box, zoom: zoom, centered_in: centered_in, chart_ctor: chart_ctor, rectangular_chart: rectangular_chart, radial_chart: radial_chart, unit_bound: unit_bound, rectangular_defaults: rectangular_defaults, radial_bound: radial_bound, radial_defaults: radial_defaults}}) .call(this)}) .call(this)}) 
 ;result.caterwaul_expression_ref_table = {e: ( "caterwaul.numeric_offline_2")} 
 ;return(result)}) .call(this,caterwaul.numeric_offline_2)) 
 ;
