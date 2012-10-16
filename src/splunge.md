@@ -143,11 +143,13 @@ This isn't a complete interaction layer, but it gives you some useful functions 
       context_box(b)(c)                                                = c.translate(b.v[0], b.v[1]) -then- c.scale(b.dv[0], b.dv[1]) -then- c,  zoom(b, dv) = b /~transform_dv_with/ scale(dv).inverse(),
       centered_in(c, w = +c.width, h = +c.height, m = w /-Math.min/ h) = [w >> 1, h >> 1] /-box/ [m >> 1, m >> 1],
 
-      chart_ctor = given[transform, path, view, slice, data][this.transform_ = transform, this.path_ = path, this.view_ = view, this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
-                   capture [slice(s, d, v)       = new this.constructor(this.transform_, this.path_, v || this.view_, s || this.slice_, d || this.data_),
+      chart_ctor = given[transform, path, area, view, slice, data][this.transform_ = transform, this.path_  = path,  this.area_ = area,
+                                                                   this.view_      = view,      this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
+
+                   capture [slice(s, d, v)       = new this.constructor(this.transform_, this.path_, this.area_, v || this.view_, s || this.slice_, d || this.data_),
                             interpolate(c, x)    = this.slice(this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x), this.view_.interpolate(c.view_, x)),
                             transformed_data()   = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
-                            visible_data(limit)  = descend_while("_.bound().transform_with(vbox).area() > limit".qf, where [vbox = this.view_], this.transformed_data()),
+                            visible_data(limit)  = descend_while("area_fn(_.bound()) > limit_area".qf, where [area_fn = this.area_, limit_area = limit / this.view_.area()], this.transformed_data()),
                             transform_context(c) = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0] /-Math.max/ this.view_.dv[1]],
                             transform()          = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
 
@@ -155,10 +157,14 @@ This isn't a complete interaction layer, but it gives you some useful functions 
                             render(f, limit)     = this.visible_data(limit || 1) *![x.children().length || f(this.path_(x.bound()))] -seq,
                             find(v)              = find_point(this.transform().inverse().transform(v), this.data_)],
 
-      rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.view, options.slice, data),
-      radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.view, options.slice, data),
+      rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.area, options.view, options.slice, data),
+      radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.area, options.view, options.slice, data),
 
-      unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),              rectangular_defaults = {transform: x_arctangent,                                                       slice: [1, 1] /!scale},
-      radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon]),  radial_defaults      = {transform: polar_to_cartesian / scale([1, Math.PI]) /-composite/ x_arctangent, slice: [1, 1] /!scale}],
+      polar_area(box)      = box.dv[1] * (2 * box.v[0] * box.dv[0] + box.dv[0] * box.dv[0]) /!Math.abs,
+      rectangular_defaults = {transform: x_arctangent,                                                       slice: [1, 1] /!scale, area: "_.area()".qf},
+      radial_defaults      = {transform: polar_to_cartesian / scale([1, Math.PI]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.transform_with(cartesian_to_polar) /!polar_area".qf},
+
+      unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),
+      radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon])],
 
       using [caterwaul.numeric_offline_2]});
