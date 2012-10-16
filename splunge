@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  b8db7c6d8edfbf6ae4a715ac9326b9f9
-# istate: e41f3a30f75fb6953fd40d58690a9754
+# state:  6dea58ec9a0fef01dc370916dcba1e58
+# istate: 1cce56b6b55e5b660b7decaca73c346f
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1872,17 +1872,19 @@ overlapping elements along the db-perpendicular diagonal. In this case, use boun
 
   by(f)(a, b)                           = f(a) - f(b),
   dot_ordering(bound, x, b = x.bound()) = b.v /-vminus/ bound.v /-vdot/ bound.dv,
-  bounded(xs)                           = capture [bound() = bound, children() = children, transform_with(t) = bounded(this.children() *[x.transform_with(t)] -seq),
-                                                                                           interpolate(b, x) = bounded_interpolation(this, b, x)]
-                                           -where [bound    = xs *[x.bound()] /[x0 /~union/ x] -seq,
-                                                   children = xs.slice() /~sort/ by("dot_ordering(bound, _)".qf)],
+  renderable(x)                         = x /-$.merge/ capture [interpolate(b, x) = bounded_interpolation(this, b, x),
+                                                                transform_with(t) = capture [bound()    = this.bound_    -dcq- b.transform_with(t),
+                                                                                             children() = this.children_ -dcq- cs *[x.transform_with(t)] /seq] /!renderable
+                                                                                     -where [b = this.bound(), cs = this.children()]],
 
-  find_point(v, b)                      = b.bound() /~contains/ v ? b.children() |[find_point(v, x)] |seq || b : null,
+  bounded(xs)                           = capture [bound() = bound, children() = children] /!renderable -where [bound    = xs *[x.bound()] /[x0 /~union/ x] -seq,
+                                                                                                                children = xs.slice() /~sort/ by("dot_ordering(bound, _)".qf)],
 
   scale_size(l, x, b = l.bound())       = l.transform_with(translate(b.v) / scale([x, x]) /-composite/ translate([-b.v[0], -b.v[1]])),
   bounded_interpolation(l1, l2, x)      = x === 0 ? l1 : x === 1 ? l2 : l1 === l2 ? l1 : bounded([scale_size(l1, 1 - x), scale_size(l2, x)]),   // FIXME
 
-  descend_while(f, x)                   = f(x) ? [x] + x.children() *~![descend_while(f, x)] -seq : [],
+  find_point(v, b)                      = b.bound() /~contains/ v ? b.children() |[find_point(v, x)] |seq || b : null,
+  descend_while(f, x)                   = x.children() *![descend_while(f, x)] -seq -when- f(x),
 
 Rendering.
 The most important/difficult aspect of rendering is drawing the paths that represent objects. These functions do that for you, at the same time using some optimizations to avoid rendering elements that
@@ -1916,16 +1918,16 @@ This isn't a complete interaction layer, but it gives you some useful functions 
   chart_ctor = given[transform, path, area, view, slice, data][this.transform_ = transform, this.path_  = path,  this.area_ = area,
                                                                this.view_      = view,      this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
 
-               capture [slice(s, d, v)       = new this.constructor(this.transform_, this.path_, this.area_, v || this.view_, s || this.slice_, d || this.data_),
-                        interpolate(c, x)    = this.slice(this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x), this.view_.interpolate(c.view_, x)),
-                        transformed_data()   = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
-                        visible_data(limit)  = descend_while("area_fn(_.bound()) > limit_area".qf, where [area_fn = this.area_, limit_area = limit / this.view_.area()], this.transformed_data()),
-                        transform_context(c) = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0] /-Math.max/ this.view_.dv[1]],
-                        transform()          = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
+               capture [slice(s, d, v)         = new this.constructor(this.transform_, this.path_, this.area_, v || this.view_, s || this.slice_, d || this.data_),
+                        interpolate(c, x)      = this.slice(this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x), this.view_.interpolate(c.view_, x)),
+                        transformed_data()     = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
+                        visible_data(f, limit) = descend_while("area_fn(_.bound()) > limit_area && f(_)".qf, where [area_fn = this.area_, limit_area = limit / this.view_.area()], this.transformed_data()),
+                        transform_context(c)   = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0] /-Math.max/ this.view_.dv[1]],
+                        transform()            = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
 
-                        with_context(c, f)   = c.save() -then- r /eq [f.call(this, this.transform_context(c))] -then- c.restore() -then- r -where [r = null],
-                        render(f, limit)     = this.visible_data(limit || 1) *![x.children().length || f(this.path_(x.bound()))] -seq,
-                        find(v)              = find_point(this.transform().inverse().transform(v), this.data_)],
+                        with_context(c, f)     = c.save() -then- r /eq [f.call(this, this.transform_context(c))] -then- c.restore() -then- r -where [r = null],
+                        render(f, limit)       = this.visible_data("_.children().length || f(p(_.bound()))".qf, limit || 1) -where [p = this.path_],
+                        find(v)                = find_point(this.transform().inverse().transform(v), this.data_)],
 
   rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.area, options.view, options.slice, data),
   radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.area, options.view, options.slice, data),
