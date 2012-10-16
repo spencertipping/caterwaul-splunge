@@ -31,7 +31,7 @@ caterwaul.module( 'splunge' , (function (e) {var result= ( function ($) { (funct
 ; xi < xl
 ; ++xi) x = xs[xi] , xr.push( (xs[xl - xi - 1] .inverse())) 
 ; return xr}) .call(this,Array.prototype.slice.call( (ts))))))}}} , box_ctor = (function (it) {return $.merge( it.prototype, {area:function () { 
-; return this.dv[0] * this.dv[1]} , contains:function (v) { 
+; return Math.abs(this.dv[0] * this.dv[1])} , contains:function (v) { 
 ; return v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1]} , interpolate:function (b, x) { 
 ; return( this.scale(1 - x)) .plus( b.scale(x))} , intersect:function (b) { 
 ; return( this) .map_corners(function (_) {return(b) .intern( _)})} , transform:function (v) { 
@@ -105,9 +105,9 @@ caterwaul.module( 'splunge' , (function (e) {var result= ( function ($) { (funct
 ; return box( [w >> 1, h >> 1] , [m >> 1, m >> 1])} , chart_ctor = (function (it) {return $.merge( it.prototype, {slice:function (s, d, v) { 
 ; return new this.constructor(this.transform_, this.path_, v || this.view_, s || this.slice_, d || this.data_)} , interpolate:function (c, x) { 
 ; return this.slice(this.slice_.interpolate(c.slice_, x) , this.data_.interpolate(c.data_, x) , this.view_.interpolate(c.view_, x))} , transformed_data:function () { 
-; return( this.data_) .transform_with(composite( this.transform_, this.slice_))} , visible_data:function (area) { 
+; return( this.data_) .transform_with(composite( this.transform_, this.slice_))} , visible_data:function (limit) { 
 ; return descend_while( (function () {var vbox = this.view_
-; return function (_) {return _.bound() .transform_with(vbox) .area() > area}}) .call(this) , this.transformed_data())} , transform_context:function (c) { 
+; return function (_) {return _.bound() .transform_with(vbox) .area() > limit}}) .call(this) , this.transformed_data())} , transform_context:function (c) { 
 ; return(function (it) {return c.lineWidth /=Math.max( this.view_.dv[0] , this.view_.dv[1]) , it}) .call(this, ( context_box(this.view_) (c)))} , transform:function () { 
 ; return this.composite_transform_ !== void 0 ? this.composite_transform_: this.composite_transform_ = composite(this.view_, this.transform_, this.slice_)} , with_context:function (c, f) { 
 ; return(function () {var r = null

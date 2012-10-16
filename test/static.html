@@ -12,11 +12,13 @@
       console.log('#{data_elements} data elements'),
       where [s             = caterwaul.splunge,
              data_elements = 0,
-             chart         = s.radial_chart(s.bounded(n[50] *y[s.bounded(n[50] *[++data_elements, xi / [x * 0.1, y * 0.15] /-s.rectangle/ [0.01, 0.01]] -seq)] -seq),
+             chart         = s.radial_chart(s.bounded(n[10] *y[s.bounded(n[50] *[++data_elements, xi / [x * 0.1, y * 0.15] /-s.rectangle/ [0.05, 0.03]] -seq)] -seq),
                                             {view: s.centered_in($('#splunge-test')[0])}),
              render(c)     = c.with_context($('#splunge-test')[0].getContext('2d'),
                                             given.context [context.fillStyle = 'white', context.fillRect(-2, -2, 4, 4),
-                                                           context.fillStyle = 'green', this.render("_(context), context.closePath(), context.fill()".qf, 1)])]}));
+                                                           context.fillStyle = 'green', this.render("++paths, _(context), context.closePath(), context.fill()".qf, 7),
+                                                           console.log('#{paths} paths'),
+                                                           where [paths = 0]])]}));
   </script>
 </head>
 <body style='margin:0;overflow:hidden'>

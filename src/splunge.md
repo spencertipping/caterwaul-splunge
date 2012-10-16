@@ -63,7 +63,7 @@ The stack() function accumulates an offset from the dot product of the given vec
 vertically. You can also use it to stack descendants, though if your charts are large or infinite you will want to create a cons function that lazily produces elements.
 
     box_ctor = given[v, dv][this.v = v, this.dv = dv, null] -se- it.prototype /-$.merge/
-               capture [area()            = this.dv[0] * this.dv[1],              contains(v)  = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
+               capture [area()            = Math.abs(this.dv[0] * this.dv[1]),    contains(v)  = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
                         interpolate(b, x) = this.scale(1 - x) /~plus/ b.scale(x), intersect(b) = this /~map_corners/ "b /~intern/ _".qf,
                         transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,  union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
                                                                                                                                   c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
@@ -147,7 +147,7 @@ This isn't a complete interaction layer, but it gives you some useful functions 
                    capture [slice(s, d, v)       = new this.constructor(this.transform_, this.path_, v || this.view_, s || this.slice_, d || this.data_),
                             interpolate(c, x)    = this.slice(this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x), this.view_.interpolate(c.view_, x)),
                             transformed_data()   = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
-                            visible_data(area)   = descend_while("_.bound().transform_with(vbox).area() > area".qf, where [vbox = this.view_], this.transformed_data()),
+                            visible_data(limit)  = descend_while("_.bound().transform_with(vbox).area() > limit".qf, where [vbox = this.view_], this.transformed_data()),
                             transform_context(c) = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0] /-Math.max/ this.view_.dv[1]],
                             transform()          = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
 
