@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  dd85a3d931191fc8fa731fd97676ccea
-# istate: 47f92311cc9b2c56fb00661685d0bb7f
+# state:  f0190c0e610f19f37fa8259f946c71b3
+# istate: 61652c64269a9d68e9720ef409ed476c
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1805,7 +1805,7 @@ which linearly transforms space such that some bounding box is mapped to the uni
 Transformations provide two methods, transform(v) and inverse(). t.inverse().inverse().transform(v) should be equivalent to t.transform(v), though t.inverse().transform(t.transform(v)) might not be
 equivalent to v in some cases.
 
-Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the cartesian_to_polar coordinate transforms have Y components that vary from -π to π. This is deliberate. It's written this way
+Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the cartesian_to_polar coordinate transforms have Y components that vary from 0 to τ. This is deliberate. It's written this way
 so that you can use the cartesian_to_polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a
 scale(x, x) transformation to make it fit inside a 2x by 2x box centered at the origin.
 
@@ -1818,7 +1818,7 @@ http://en.wikipedia.org/wiki/Machine_epsilon for ways to compute it.
   x_tangent          = capture [transform = componentwise(scaled_tan, "_".qf), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, "_".qf), inverse() = x_tangent],
   y_tangent          = capture [transform = componentwise("_".qf, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise("_".qf, scaled_atan), inverse() = y_tangent],
   polar_to_cartesian = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = cartesian_to_polar],
-  cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, t],                             inverse() = polar_to_cartesian],
+  cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, (t + tau) % tau],               inverse() = polar_to_cartesian],
 
   bounding_box(b)    = capture [transform(v) = b /~intern/ v, inverse() = identity_transform],  identity_transform = capture [transform(v) = v, inverse() = this],
 
@@ -1839,7 +1839,7 @@ transformations.
     element(k) = rectangle(k, [0, 0], [1, data[k]]),
     chart_objects = y_stack(data /keys *element -seq)
 
-  The x_stack() and y_stack() functions translate and scale a series of rectangles into the range [-1, 1] along whichever dimension you specify. The other dimension is unmodified.
+  The x_stack() and y_stack() functions translate and scale a series of rectangles into the range [0, 1] along whichever dimension you specify. The other dimension is unmodified.
 
   box_ctor = given[v, dv][this.v = v, this.dv = dv, null] -se- it.prototype /-$.merge/
              capture [area()            = Math.abs(this.dv[0] * this.dv[1]),    contains(v)  = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
@@ -1858,8 +1858,8 @@ transformations.
   box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-infinity, -infinity], [2 * infinity, 2 * infinity]),
   rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([        0,         0], [           0,            0]),
 
-  x_stack(rs, h, x = -1, total = h || rs /[0][x0 + x.dv[0]] -seq) = rs *r[rectangle(r.data, [x, r.v[1]], [r.dv[0] / total, r.dv[1]]) -se [x += r.dv[0] * 2 / total]] -seq,
-  y_stack(rs, h, y = -1, total = h || rs /[0][x0 + x.dv[1]] -seq) = rs *r[rectangle(r.data, [r.v[0], y], [r.dv[0], r.dv[1] / total]) -se [y += r.dv[1] * 2 / total]] -seq,
+  x_stack(rs, h, x = 0, total = h || rs /[0][x0 + x.bound().dv[0]] -seq) = rs *r[r.transform_with([x - r.bound().v[0], 0] /-box/ [1 / total, 1]) -se [x += r.bound().dv[0] / total]] -seq,
+  y_stack(rs, h, y = 0, total = h || rs /[0][x0 + x.bound().dv[1]] -seq) = rs *r[r.transform_with([0, y - r.bound().v[1]] /-box/ [1, 1 / total]) -se [y += r.bound().dv[1] / total]] -seq,
 
 Infinite data sets.
 You can render and interact with infinite data sets provided that you specify some limit on what gets rendered. Usually this involves either things being out of bounds or things being too small to be
@@ -1935,9 +1935,9 @@ This isn't a complete interaction layer, but it gives you some useful functions 
 
   polar_area(box, dr = box.dv[0]) = box.dv[1] * (2 * box.v[0] * dr + dr * dr) /!Math.abs,
   rectangular_defaults            = {transform: bounding_box([-1, -1] /-box/ [2, 2 - epsilon]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.area()".qf},
-  radial_defaults                 = {transform: polar_to_cartesian / box([0.5, 0], [0.5, Math.PI]) / bounding_box([-1, -1 + 1e-4] /-box/ [2, 2 - 2e-4]) /-composite/ x_arctangent,
+  radial_defaults                 = {transform: polar_to_cartesian / box([0.5, 0], [0.5, tau - 0.001]) / bounding_box([-1, 0] /-box/ [2, 1]) /-composite/ x_arctangent,
                                      slice:     [1, 1] /!scale,
-                                     area:      "polar_area(_.transform_with(cartesian_to_polar))".qf}],
+                                     area:      "_.transform_with(cartesian_to_polar) /!polar_area".qf}],
   using [caterwaul.numeric_offline_2]});
 
 __

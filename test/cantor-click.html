@@ -24,9 +24,9 @@
              cantor(x, y, dy) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, y], [s.infinity, dy]),
                                                       children() = this.children_ -dcq- [s.rectangle(++count, [x, y], [0.08, dy]), cantor(x + 0.08, y, dy / 3), cantor(x + 0.08, y + dy * 2/3, dy / 3)]]),
 
-             chart            = s.radial_chart(cantor(0.1, -1, 1.9), {view: s.centered_in($('#splunge-test')[0])}),
+             chart            = s.radial_chart(cantor(0.1, 0, 1), {view: s.centered_in($('#splunge-test')[0])}),
              current          = chart,
-             render           = su.chart_renderer("su.rgba(_.bound().untransformed_.v[1] * 0.5 + 0.5, _.data === selected_data ? 1 : 0.5, 1, 0.8)".qf,
+             render           = su.chart_renderer("su.rgba(_.bound().untransformed_.v[1], _.data === selected_data ? 1 : 0.5, 1, 0.8)".qf,
                                                   $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['rgba(255,255,255,1)'], 20)]}));
   </script>
 </head>

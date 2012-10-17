@@ -11,7 +11,7 @@
       $('#splunge-test').mousemove(render(chart.slice(chart.transform().inverse().transform([e.pageX, e.pageY]) /-s.box/ [1, 1])), given.e),
       where [s           = caterwaul.splunge,
 
-             harmonic(x) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, 2 - 1/x], [1, s.tau]),
+             harmonic(x) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, 1 - 1/x], [1, 1]),
                                                  children() = this.children_ -dcq- [s.box([0.5, 2 - 1/x], [0.5, 1/x*x]), harmonic(x + 1)]]),
 
              chart       = s.radial_chart(harmonic(1), {view: s.centered_in($('#splunge-test')[0])}),
