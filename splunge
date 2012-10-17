@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  3efb0caa1f35ec0421099a77108f252a
-# istate: 524816a6e90765ddd1621f0604c42a75
+# state:  7705b1ba45ff57768aae3f3a05f3b3ab
+# istate: 1c92fd2cbf2936c0b4b5a68a66c43213
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1981,7 +1981,7 @@ ahead-of-time or per-element using a side-effect in the color_fn in the unlikely
 Within these rendering functions, the line style and background color are assumed to be the same thing.
 
   renderer(color_fn, context)(path_fn, element)   = path_fn(context) <then> context.fillStyle -eq- color_fn(element) <then> context.fill() <then> context.stroke(),
-  chart_renderer(color_fn, context, limit)(chart) = chart.with_context(context, given.c [c.fillStyle -eq- c.strokeStyle <then> c.fillRect(-infinity, -infinity, 2 * infinity, 2 * infinity)
+  chart_renderer(color_fn, context, limit)(chart) = chart.with_context(context, given.c [c.fillStyle -eq- c.strokeStyle <then> c.fillRect(-1e8, -1e8, 2e8, 2e8)
                                                                                                                         <then> chart.render(renderer(color_fn, c), limit)])],
   using [caterwaul.splunge]});
 

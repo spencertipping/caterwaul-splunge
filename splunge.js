@@ -181,7 +181,7 @@ var start = +new Date;
  return function (path_fn, element) { ;
  return( ( ( path_fn(context) , context.fillStyle = color_fn(element)) , context.fill()) , context.stroke())}} , chart_renderer =function (color_fn, context, limit) { ;
  return function (chart) { ;
- return chart.with_context(context, (function (c) {return( (c.fillStyle = c.strokeStyle, c.fillRect( -infinity, -infinity, 2 * infinity, 2 * infinity)) , chart.render(renderer(color_fn, c) , limit))}))}} ;
+ return chart.with_context(context, (function (c) {return( (c.fillStyle = c.strokeStyle, c.fillRect( -1e8, -1e8, 2e8, 2e8)) , chart.render(renderer(color_fn, c) , limit))}))}} ;
  return{ rgba: rgba, rgb: rgb, animator: animator, cosine_tween: cosine_tween, animate: animate, renderer: renderer, chart_renderer: chart_renderer}}) .call(this)}) .call(this)}) ;
 result.caterwaul_expression_ref_table = {e1: ( "caterwaul.splunge")} ;
 return(result)}) .call(this,caterwaul.splunge)) ;
