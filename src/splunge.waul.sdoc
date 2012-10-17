@@ -88,9 +88,9 @@ library we use the bound-nesting property.
   children().
 
   renderable(x)                    = x /-$.merge/ capture [interpolate(b, x) = bounded_interpolation(this, b, x),
-                                                           transform_with(t) = capture [force()    = this.forced_ -dcq- bounded(xs *[x.transform_with(t)] -seq),
-                                                                                        bound()    = this.force().bound(),
-                                                                                        children() = this.force().children()] /!renderable -where [xs = this.children()]],
+                                                           transform_with(t) = capture [bound()    = b /~transform_with/ t,
+                                                                                        children() = this.children_ -dcq- xs *[x /~transform_with/ t] /seq] /!renderable
+                                                                                -where [b = this.bound(), xs = this.children()]],
 
   bounded(xs)                      = capture [bound() = bound, children() = xs] /!renderable -where [bound = xs *[x.bound()] /[x0 /~union/ x] -seq],
 
@@ -148,9 +148,9 @@ This isn't a complete interaction layer, but it gives you some useful functions 
   rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.area, options.view, options.slice, data),
   radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.area, options.view, options.slice, data),
 
-  polar_area(box, dr = Math.max(0, box.dv[0])) = Math.max(0, box.dv[1]) * (2 * box.v[0] * dr + dr * dr) /!Math.abs,
-  rectangular_defaults                         = {transform: bounding_box([-1, -1] /-box/ [2, 2 - epsilon]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.area()".qf},
-  radial_defaults                              = {transform: polar_to_cartesian / scale([1, Math.PI]) / bounding_box([0, -1] /-box/ [1, 2 - epsilon]) /-composite/ x_arctangent,
-                                                  slice:     [1, 1] /!scale,
-                                                  area:      "_.transform_with(cartesian_to_polar) /!polar_area".qf}],
+  polar_area(box, dr = box.dv[0]) = box.dv[1] * (2 * box.v[0] * dr + dr * dr) /!Math.abs,
+  rectangular_defaults            = {transform: bounding_box([-1, -1] /-box/ [2, 2 - epsilon]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.area()".qf},
+  radial_defaults                 = {transform: polar_to_cartesian / scale([1, Math.PI]) / bounding_box([0, -1] /-box/ [1, 2 - epsilon]) /-composite/ x_arctangent,
+                                     slice:     [1, 1] /!scale,
+                                     area:      "_.transform_with(cartesian_to_polar) /!polar_area".qf}],
   using [caterwaul.numeric_offline_2]});
