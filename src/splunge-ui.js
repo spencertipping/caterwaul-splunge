@@ -1,1 +1,17 @@
-caterwaul.module( 'splunge.ui' , function ($) { $.splunge_ui = null}) ;
+caterwaul.module( 'splunge.ui' , function ($) { $.splunge_ui = (function () {var rgba =function (h, s, v, a) {var rgb_floats = rgb(h, s, v) ;
+ return( 'rgba(' + (rgb_floats[0] * 255 >>> 0) + ', ' + (rgb_floats[1] * 255 >>> 0) + ', ' + (rgb_floats[2] * 255 >>> 0) + ', ' + (a) + ')')} , rgb =function (h, s, v) {var c = v * s;
+var x = 1 - Math.abs(h % 2 - 1) ;
+var m = v - c;
+var c1 = c + m;
+var c2 = x + m;
+var c3 = m;
+ return h < 0.5 ? h < 1/6 ? [c1, c2, c3 ]: h < 1/3 ? [c2, c1, c3 ]: [c3, c1, c2 ]: h < 2/3 ? [c3, c2, c1 ]: h < 5/6 ? [c2, c3, c1 ]: [c3, c2, c1]} , animator =function (duration, tween) { ;
+ return function (f) {var i = null;
+var now = +new Date;
+ return i = setInterval( (function (e) {return+new Date + start > duration && ( (f(tween(Math.min(1, ( +new Date - now) / duration))) , clearInterval(i)) , f(1, true))}) , 30)}} , cosine_tween =function (x) { ;
+ return Math.cos(x) * -0.5 + 0.5} , animate = animator(400, cosine_tween) , renderer =function (color_fn, context) { ;
+ return function (path_fn, element) { ;
+ return( ( ( ( path_fn(context) , context.fillStyle = color_fn(element)) , context.closePath()) , context.fill()) , context.stroke())}} , chart_renderer =function (color_fn, context, limit) { ;
+ return function (chart) { ;
+ return chart.with_context(context, (function (c) {return( (c.fillStyle = c.strokeStyle, c.fillRect( -infinity, -infinity, 2 * infinity, 2 * infinity)) , chart.render(renderer(color_fn, c) , limit))}))}} ;
+ return{ rgba: rgba, rgb: rgb, animator: animator, cosine_tween: cosine_tween, animate: animate, renderer: renderer, chart_renderer: chart_renderer}}) .call(this)}) ;

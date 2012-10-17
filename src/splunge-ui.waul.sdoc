@@ -6,4 +6,34 @@ Splunge provides a way to create charts, but often you will want to do more than
 screen coordinates back into data-space, and functions for doing things like rendering sub-charts focused on a particular data element.
 
 caterwaul.module('splunge.ui', ':all', function ($) {
-  $.splunge_ui = null});
+  $.splunge_ui = wcapture [
+
+Color generation.
+This is a function that maps HSV coordinates to RGB. We use this later on: hue corresponds to some scalar quantity of the data (or just its Y-coordinate), and saturation corresponds to its level of focus
+or relevance. We would decrease the saturation if, for instance, the user popped up a sub-chart on top of the original and therefore was no longer focused on the original for a moment. Value varies by
+whether the user is hovering on something. HSV values are always in the range [0, 1], as are the generated RGB values.
+
+  rgba(h, s, v, a, rgb_floats = rgb(h, s, v))                                                     = 'rgba(#{rgb_floats[0] * 255 >>> 0}, #{rgb_floats[1] * 255 >>> 0}, #{rgb_floats[2] * 255 >>> 0}, #{a})',
+  rgb(h, s, v, c = v * s, x = 1 - Math.abs(h % 2 - 1), m = v - c, c1 = c + m, c2 = x + m, c3 = m) = h < 0.5 ? h < 1/6 ? [c1, c2, c3] : h < 1/3 ? [c2, c1, c3] : [c3, c1, c2] :
+                                                                                                              h < 2/3 ? [c3, c2, c1] : h < 5/6 ? [c2, c3, c1] : [c3, c2, c1],
+
+Animation.
+Uses setInterval and measures 'real time' between calls to find interpolation points. You can supply your own interpolator, or use the default cosine interpolation used by many frameworks including
+jQuery. Generally you would store the duration and tween values using currying, as for the animate() definition below. Animation functions return the interval used to drive the loop, so you can call
+clearInterval on the result to stop the animation.
+
+  animator(duration, tween)(f, i = null, now = +new Date) = i = setInterval(f(tween(Math.min(1, (+new Date - now) / duration))) -then-
+                                                                                                               clearInterval(i) -then- f(1, true) -when [+new Date + start > duration] , given.e, 30),
+  cosine_tween(x)                                         = Math.cos(x) * -0.5 + 0.5,
+  animate                                                 = animator(400, cosine_tween),
+
+Rendering.
+Most of the time you will probably want to fill in chart elements and stroke a border to provide some visual space between them. The only real variant is the color (and opacity) of the fill. This can
+easily be set up by using a 'get the color' callback given a data item and its focused/hovered/etc status. The line width and color are invariant wrt the rendering process, so you can set those up either
+ahead-of-time or per-element using a side-effect in the color_fn in the unlikely event that you do need to change them.
+
+Within these rendering functions, the line style and background color are assumed to be the same thing.
+
+  renderer(color_fn, context)(path_fn, element)   = path_fn(context) <then> context.fillStyle -eq- color_fn(element) <then> context.closePath() <then> context.fill() <then> context.stroke(),
+  chart_renderer(color_fn, context, limit)(chart) = chart.with_context(context, given.c [c.fillStyle -eq- c.strokeStyle <then> c.fillRect(-infinity, -infinity, 2 * infinity, 2 * infinity)
+                                                                                                                        <then> chart.render(renderer(color_fn, c), limit)])]});

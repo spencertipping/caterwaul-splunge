@@ -134,7 +134,7 @@ var m =Math.min( w, h) ;
  return(function () {var r = null;
  return( ( ( c.save() , r =f.call(this, this.transform_context(c))) , c.restore()) , r)}) .call(this)} , render:function (f, limit) { ;
  return(function () {var p = this.path_;
- return this.visible_data(function (_) {return _.children() .length || f(p(_.bound()))} , limit || 1)}) .call(this)} , find:function (v) { ;
+ return this.visible_data(function (_) {return _.children() .length || f(p(_.bound()) , _)} , limit || 1)}) .call(this)} , find:function (v) { ;
  return find_point(this.transform() .inverse() .transform(v) , this.data_)}}) , it}) .call(this, ( (function (transform, path, area, view, slice, data) {return this.transform_ = transform, this.path_ = path, this.area_ = area, this.view_ = view, this.slice_ = slice, this.data_ = data, null}))) , rectangular_chart =function (data, options) {var options =$.merge( {} , rectangular_defaults, options) ;
  return new chart_ctor(options.transform, rectangle_path, options.area, options.view, options.slice, data)} , radial_chart =function (data, options) {var options =$.merge( {} , radial_defaults, options) ;
  return new chart_ctor(options.transform, arc_path, options.area, options.view, options.slice, data)} , polar_area =function (box) {var dr = box.dv[0] ;

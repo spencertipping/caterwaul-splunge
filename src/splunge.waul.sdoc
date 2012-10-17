@@ -142,7 +142,7 @@ This isn't a complete interaction layer, but it gives you some useful functions 
                         transform()            = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
 
                         with_context(c, f)     = c.save() -then- r /eq [f.call(this, this.transform_context(c))] -then- c.restore() -then- r -where [r = null],
-                        render(f, limit)       = this.visible_data("_.children().length || f(p(_.bound()))".qf, limit || 1) -where [p = this.path_],
+                        render(f, limit)       = this.visible_data("_.children().length || f(p(_.bound()), _)".qf, limit || 1) -where [p = this.path_],
                         find(v)                = find_point(this.transform().inverse().transform(v), this.data_)],
 
   rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.area, options.view, options.slice, data),
