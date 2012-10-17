@@ -12,9 +12,8 @@ infinite data sets, provided that you use some heuristic such as minimum viewabl
 
 # Transformations
 
-Transformations act on dimensions and bounding boxes. They can modify space in any way that preserves the monotonicity properties of stacks. (They can also violate the property, but doing so may cause
-incorrect render output.) In addition to transforming things forwards, they must also provide inverses. This allows externally-generated points such as mouse input to be mapped back through the
-transformation into logical space for event processing.
+Transformations act on dimensions and bounding boxes. They can modify space in any way that preserves basic rectangular properties. In addition to transforming things forwards, they must also provide
+inverses. This allows externally-generated points such as mouse input to be mapped back through the transformation into logical space for event processing.
 
 Splunge comes with three transformations. One, the arctangent transform, is used to visually compress data along an axis. The axis that it transforms is compressed from (-∞, ∞) to (-1, 1), and
 monotonicity properties are preserved. Another is the cartesian_to_polar transform, which converts two axes into magnitude and angle and is suitable for turning bar charts into ring charts. The third is bounding,
@@ -57,18 +56,18 @@ Each data element is a rectangle or series of rectangles that can later be trans
 to use a layout function if you want to create a normal chart easily. For example, you can produce a one-ring pie chart by stacking rectangles of equal widths:
 
     data = {foo: 3, bar: 5, bif: 2, baz: 6},
-    chart_objects = y_stack(cons_from_array(data /pairs *[rectangle(x[0], [0, 0], [1, x[1]])] -seq)),
+    element(k) = rectangle(k, [0, 0], [1, data[k]]),
+    chart_objects = y_stack(data /keys *element -seq)
 
-The stack() function accumulates an offset from the dot product of the given vector and the bounding box offset of each entry. In this case we specified the vector [0, 1], so stacking proceeds
-vertically. You can also use it to stack descendants, though if your charts are large or infinite you will want to create a cons function that lazily produces elements.
+The x_stack() and y_stack() functions translate and scale a series of rectangles into the range [-1, 1] along whichever dimension you specify. The other dimension is unmodified.
 
     box_ctor = given[v, dv][this.v = v, this.dv = dv, null] -se- it.prototype /-$.merge/
-               capture [area()            = Math.abs(this.dv[0] * this.dv[1]),    contains(v)  = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
-                        interpolate(b, x) = this.scale(1 - x) /~plus/ b.scale(x), intersect(b) = this /~map_corners/ "b /~intern/ _".qf,
-                        transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,  union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
-                                                                                                                                  c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
-
-                        transform_v_with(t) = t.transform(this.v) /-box/ this.dv, transform_dv_with(t) = this.v /-box/ t.transform(this.dv),
+               capture [intersect(b)      = this /~map_corners/ "b /~intern/ _".qf, contains(v)  = v[0] >= this.v[0] && v[1] >= this.v[1] && v[0] <= this.v[0] + this.dv[0] && v[1] <= this.v[1] + this.dv[1],
+                        interpolate(b, x) = this.scale(1 - x) /~plus/ b.scale(x),   area()       = Math.max(0, this.dv[0]) * Math.max(0, this.dv[1]), 
+                        transform(v)      = this.v |-vplus| v /-vtimes/ this.dv,    union(b)     = box(c1, c2 /-vminus/ c1) -where [c1 = this.v                  |-vmin| b.v,
+                                                                                                                                    c2 = this.v /-vplus/ this.dv |-vmax| b.v /-vplus/ b.dv],
+                        transform_v_with(t)  = rectangle(this.data, t /~transform/ this.v, this.dv),
+                        transform_dv_with(t) = rectangle(this.data, this.v, t /~transform/ this.dv),
 
                         children() = [],                                               toString()        = '[#{this.v[0]},#{this.v[1]} -> #{this.dv[0]},#{this.dv[1]}]',
                         intern(v)  = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv, map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
@@ -79,40 +78,35 @@ vertically. You can also use it to stack descendants, though if your charts are 
     box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-infinity, -infinity], [2 * infinity, 2 * infinity]),
     rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([        0,         0], [           0,            0]),
 
+    x_stack(rs, h, x = -1, total = h || rs /[0][x0 + x.dv[0]] -seq) = rs *r[rectangle(r.data, [x, r.v[1]], [r.dv[0] / total, r.dv[1]]) -se [x += r.dv[0] * 2 / total]] -seq,
+    y_stack(rs, h, y = -1, total = h || rs /[0][x0 + x.dv[1]] -seq) = rs *r[rectangle(r.data, [r.v[0], y], [r.dv[0], r.dv[1] / total]) -se [y += r.dv[1] * 2 / total]] -seq,
+
 # Infinite data sets
 
 You can render and interact with infinite data sets provided that you specify some limit on what gets rendered. Usually this involves either things being out of bounds or things being too small to be
-visible. In either case, you need a way to infer properties of some elements from properties of others; generally this means using a hierarchy and some kind of induction against that hierarchy. The exact
-rule is this. Suppose xs is an array of chart elements or other arrays whose bounding box is b = [b0 -> db]. Then:
-
-    1. xs[k].bound() ⊆ b                                                                  // everything must be contained within the bounding box
-    2. j > i implies that (xs[j].bound().v - b0) · db ≥ (xs[i].bound().v - b0) · db       // directional ordering
-    3. xs[k].bound().dv · db ≥ 0 ∀ k                                                      // bounding box alignment
-    4. (xs[k].bound().v - b0) · db ≥ 0 ∀ k                                                // follows from (1)
-
-Normally these cases will all be met if you do stuff like stacking elements along one of the edges of the bounding box. The only case you're likely to violate one is if you're sparsely filling a box with
-overlapping elements along the db-perpendicular diagonal. In this case, use bounded() to get an automatically-sorted list.
+visible. In either case, you need a way to infer properties of some elements from properties of others; generally this means using a hierarchy and some kind of induction against that hierarchy. For this
+library we use the bound-nesting property.
 
 ## Laziness
 
-Each layer of the data consists of a box with two methods, bound() and children(). bound() should return a bounding box, possibly infinite, and children() should synchronously return an array of
-children all of whose bounds are contained within the bounding box.
+Each data object must provide two methods, bound() and children(). bound() should return a bounding box, possibly infinite, and children() should synchronously return an array of children all of whose
+bounds are contained within the bounding box. You should call renderable() on the result to provide two more useful methods, transform_with() and interpolate(). These are derived from bound() and
+children().
 
-    by(f)(a, b)                           = f(a) - f(b),
-    dot_ordering(bound, x, b = x.bound()) = b.v /-vminus/ bound.v /-vdot/ bound.dv,
-    renderable(x)                         = x /-$.merge/ capture [interpolate(b, x) = bounded_interpolation(this, b, x),
-                                                                  transform_with(t) = capture [bound()    = this.bound_    -dcq- b.transform_with(t),
-                                                                                               children() = this.children_ -dcq- cs *[x.transform_with(t)] /seq] /!renderable
-                                                                                       -where [b = this.bound(), cs = this.children()]],
+    renderable(x)                    = x /-$.merge/ capture [interpolate(b, x)              = bounded_interpolation(this, b, x),
+                                                             transform_with(t, self = this) = "self.children() *[x.transform_with(t)] -seq".qf / t /!lazy_bounded /!cached],
 
-    bounded(xs)                           = capture [bound() = bound, children() = children] /!renderable -where [bound    = xs *[x.bound()] /[x0 /~union/ x] -seq,
-                                                                                                                  children = xs.slice() /~sort/ by("dot_ordering(bound, _)".qf)],
+    bound_union(xs)                  = xs /[null][x0 ? x0 /~union/ x.bound() : x.bound()] -seq || bound_nothing,
+    bounded(xs)                      = "xs".qf /!lazy_bounded /!cached,
+    cached(b)                        = capture [bound()    = b.bound(),  children() = this.children_ -dcq- b.children()] /!renderable,
+    lazy_bounded(f, t)               = capture [bound()    = this.bound_ || (this.children_ ? this.bound_ -dcq- this.children_ /!bound_union : t ? bound_everything /~transform_with/ t : bound_everything),
+                                                children() = f()] /!renderable,
 
-    scale_size(l, x, b = l.bound())       = l.transform_with(translate(b.v) / scale([x, x]) /-composite/ translate([-b.v[0], -b.v[1]])),
-    bounded_interpolation(l1, l2, x)      = x === 0 ? l1 : x === 1 ? l2 : l1 === l2 ? l1 : bounded([scale_size(l1, 1 - x), scale_size(l2, x)]),   // FIXME
+    scale_size(l, x, b = l.bound())  = l.transform_with(translate(b.v) / scale([x, x]) /-composite/ translate([-b.v[0], -b.v[1]])),
+    bounded_interpolation(l1, l2, x) = x === 0 ? l1 : x === 1 ? l2 : l1 === l2 ? l1 : bounded([scale_size(l1, 1 - x), scale_size(l2, x)]),   // FIXME
 
-    find_point(v, b)                      = b.bound() /~contains/ v ? b.children() |[find_point(v, x)] |seq || b : null,
-    descend_while(f, x)                   = x.children() *![descend_while(f, x)] -seq -when- f(x),
+    find_point(v, b)                 = b.bound() /~contains/ v ? b.children() |[find_point(v, x)] |seq || b : null,
+    descend_while(f, x)              = x.children() *![descend_while(f, x)] -seq -when- f(x),
 
 # Rendering
 
@@ -151,7 +145,9 @@ This isn't a complete interaction layer, but it gives you some useful functions 
                    capture [slice(s, d, v)         = new this.constructor(this.transform_, this.path_, this.area_, v || this.view_, s || this.slice_, d || this.data_),
                             interpolate(c, x)      = this.slice(this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x), this.view_.interpolate(c.view_, x)),
                             transformed_data()     = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
-                            visible_data(f, limit) = descend_while("area_fn(_.bound()) > limit_area && f(_)".qf, where [area_fn = this.area_, limit_area = limit / this.view_.area()], this.transformed_data()),
+                            visible_data(f, limit) = descend_while("area_fn(_.bound()) > limit_area && f(_)".qf, where [area_fn = this.area_, limit_area = limit / this.view_.area()],
+                                                                   this.transformed_data()),
+
                             transform_context(c)   = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0] /-Math.max/ this.view_.dv[1]],
                             transform()            = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
 
@@ -162,11 +158,9 @@ This isn't a complete interaction layer, but it gives you some useful functions 
       rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.area, options.view, options.slice, data),
       radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.area, options.view, options.slice, data),
 
-      polar_area(box)      = box.dv[1] * (2 * box.v[0] * box.dv[0] + box.dv[0] * box.dv[0]) /!Math.abs,
-      rectangular_defaults = {transform: x_arctangent,                                                       slice: [1, 1] /!scale, area: "_.area()".qf},
-      radial_defaults      = {transform: polar_to_cartesian / scale([1, Math.PI]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.transform_with(cartesian_to_polar) /!polar_area".qf},
-
-      unit_bound   = bounding_box([-1, -1]       /-box/ [2, 2]),
-      radial_bound = bounding_box([-1, -Math.PI] /-box/ [2, tau - epsilon])],
-
+      polar_area(box, dr = Math.max(0, box.dv[0])) = Math.max(0, box.dv[1]) * (2 * box.v[0] * dr + dr * dr) /!Math.abs,
+      rectangular_defaults                         = {transform: bounding_box([-1, -1] /-box/ [2, 2 - epsilon]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.area()".qf},
+      radial_defaults                              = {transform: polar_to_cartesian / scale([1, Math.PI]) / bounding_box([0, -1] /-box/ [1, 2 - epsilon]) /-composite/ x_arctangent,
+                                                      slice:     [1, 1] /!scale,
+                                                      area:      "_.transform_with(cartesian_to_polar) /!polar_area".qf}],
       using [caterwaul.numeric_offline_2]});
