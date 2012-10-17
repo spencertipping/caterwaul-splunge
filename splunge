@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  d9ef35ce026a5e3ae682888462be4386
-# istate: 3b6a7813fc1bc2f817683c0342d3c9f8
+# state:  6651f8c14fad7d626dcc2f0a745be99f
+# istate: c5c92a44aa94eb97ea78c674e2db5040
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -247,6 +247,7 @@ meta::functor::editable 'waul', inherit => 1, extension => '.waul', default => '
 __
 meta::alias('e', 'edit sdoc::waul::splunge');
 meta::alias('erf', 'edit function::render');
+meta::alias('eu', 'edit sdoc::waul::splunge-ui');
 meta::bootstrap('html', <<'__');
 <html>
   <head>
@@ -723,11 +724,12 @@ my ($options, @stuff) = separate_options(@_);
 sub waulfile {file::write("src/$_[0].waul.sdoc", retrieve("sdoc::waul::$_[0]"));
               file::write("src/$_[0].md",        retrieve("markdown::waul::$_[0]"))}
 
-waulfile $_ for qw/splunge/;
+waulfile $_ for qw/splunge splunge-ui/;
 sh('waul -e deps/numeric-offline-2.js src/splunge.waul.sdoc'),
-sh("sed -ri 's/;/;\\n/g' src/splunge.js") unless $$options{-W};
+sh('waul -e deps/numeric-offline-2.js -e src/splunge.js src/splunge-ui.waul.sdoc'),
+sh("sed -ri 's/;/;\\n/g' src/splunge.js src/splunge-ui.js") unless $$options{-W};
 
-file::write('caterwaul-splunge.js', cat(qw|deps/numeric-offline-2.js src/splunge.js|));
+file::write('caterwaul-splunge.js', cat(qw|deps/numeric-offline-2.js src/splunge.js src/splunge-ui.js|));
 file::write('splunge.js',           cat(qw|deps/caterwaul.core.min.js caterwaul-splunge.js|));
 
 minify_uglify('splunge.js', '-m'),
@@ -1932,6 +1934,18 @@ This isn't a complete interaction layer, but it gives you some useful functions 
                                      slice:     [1, 1] /!scale,
                                      area:      "_.transform_with(cartesian_to_polar) /!polar_area".qf}],
   using [caterwaul.numeric_offline_2]});
+
+__
+meta::sdoc('waul::splunge-ui', <<'__');
+Splunge charting UI | Spencer Tipping
+Licensed under the terms of the MIT source code license
+
+Introduction.
+Splunge provides a way to create charts, but often you will want to do more than this when displaying data. This is the missing piece. It includes functions for rendering and shading data, ways to map
+screen coordinates back into data-space, and functions for doing things like rendering sub-charts focused on a particular data element.
+
+caterwaul.module('splunge.ui', ':all', function ($) {
+  $.splunge_ui = null});
 
 __
 meta::template('comment', '\'\';     # A mechanism for line or block comments.');

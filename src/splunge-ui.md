@@ -1,0 +1,10 @@
+Splunge charting UI | Spencer Tipping
+Licensed under the terms of the MIT source code license
+
+# Introduction
+
+Splunge provides a way to create charts, but often you will want to do more than this when displaying data. This is the missing piece. It includes functions for rendering and shading data, ways to map
+screen coordinates back into data-space, and functions for doing things like rendering sub-charts focused on a particular data element.
+
+    caterwaul.module('splunge.ui', ':all', function ($) {
+      $.splunge_ui = null});
