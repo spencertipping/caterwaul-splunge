@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+  <script src='jquery.min.js'></script>
+  <script src='caterwaul.min.js'></script>
+  <script src='caterwaul.std.min.js'></script>
+  <script src='caterwaul.ui.min.js'></script>
+  <script src='../caterwaul-splunge.js'></script>
+  <script>
+    $(caterwaul(':all')(function () {
+      $('#splunge-test').mousemove(render(chart.slice(chart.transform().inverse().transform([e.pageX, e.pageY]) /-s.box/ [1, 1])), given.e),
+      where [s           = caterwaul.splunge,
+
+             harmonic(x) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, 2 - 1/x], [1, s.tau]),
+                                                 children() = this.children_ -dcq- [s.box([0.5, 2 - 1/x], [0.5, 1/x*x]), harmonic(x + 1)]]),
+
+             chart       = s.radial_chart(harmonic(1), {view: s.centered_in($('#splunge-test')[0])}),
+             render(c)   = c.with_context($('#splunge-test')[0].getContext('2d'),
+                                          given.context [context.fillStyle = 'white', context.fillRect(-2, -2, 4, 4),
+                                                         context.strokeStyle = 'white',
+                                                         context.fillStyle = 'green', this.render("_(context), context.closePath(), context.fill(), context.stroke()".qf, 1)])]}));
+  </script>
+</head>
+<body style='margin:0;overflow:hidden'>
+  <canvas id='splunge-test' width='1024' height='600'></canvas>
+</body>
+</html>
