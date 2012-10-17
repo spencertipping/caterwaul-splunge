@@ -41,6 +41,6 @@ ahead-of-time or per-element using a side-effect in the color_fn in the unlikely
 Within these rendering functions, the line style and background color are assumed to be the same thing.
 
       renderer(color_fn, context)(path_fn, element)   = path_fn(context) <then> context.fillStyle -eq- color_fn(element) <then> context.fill() <then> context.stroke(),
-      chart_renderer(color_fn, context, limit)(chart) = chart.with_context(context, given.c [c.fillStyle -eq- c.strokeStyle <then> c.fillRect(-1e8, -1e8, 2e8, 2e8)
-                                                                                                                            <then> chart.render(renderer(color_fn, c), limit)])],
+      chart_renderer(color_fn, context, limit)(chart) = context.fillStyle -eq- context.strokeStyle <then> context.fillRect(-1e8, -1e8, 2e8, 2e8) <then>
+                                                        chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c)],
       using [caterwaul.splunge]});
