@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  97ec70c3ffd1fe43eb0941bf50198bc1
-# istate: b2c04b101b9899ad0dc6cd57041f34bb
+# state:  3efb0caa1f35ec0421099a77108f252a
+# istate: 524816a6e90765ddd1621f0604c42a75
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1935,7 +1935,7 @@ This isn't a complete interaction layer, but it gives you some useful functions 
 
   polar_area(box, dr = box.dv[0]) = box.dv[1] * (2 * box.v[0] * dr + dr * dr) /!Math.abs,
   rectangular_defaults            = {transform: bounding_box([-1, -1] /-box/ [2, 2 - epsilon]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.area()".qf},
-  radial_defaults                 = {transform: polar_to_cartesian / scale([1, Math.PI]) / bounding_box([0, -1] /-box/ [1, 2 - epsilon]) /-composite/ x_arctangent,
+  radial_defaults                 = {transform: polar_to_cartesian / box([0.5, 0], [0.5, Math.PI]) / bounding_box([-1, -1 + 1e-4] /-box/ [2, 2 - 2e-4]) /-composite/ x_arctangent,
                                      slice:     [1, 1] /!scale,
                                      area:      "polar_area(_.transform_with(cartesian_to_polar))".qf}],
   using [caterwaul.numeric_offline_2]});
