@@ -27,10 +27,10 @@ Uses setInterval and measures 'real time' between calls to find interpolation po
 jQuery. Generally you would store the duration and tween values using currying, as for the animate() definition below. Animation functions return the interval used to drive the loop, so you can call
 clearInterval on the result to stop the animation.
 
-      animator(duration, tween)(f, i = null, now = +new Date) = i = setInterval(f(tween(Math.min(1, (+new Date - now) / duration))) -then-
-                                                                                                                   clearInterval(i) -then- f(1, true) -when [+new Date + start > duration] , given.e, 30),
-      cosine_tween(x)                                         = Math.cos(x) * -0.5 + 0.5,
-      animate                                                 = animator(400, cosine_tween),
+      animator(duration, tween)(f, i = null, start = +new Date) = i = setInterval(Math.min(1, (now - start) / duration) /!tween /!f <then>
+                                                                                  clearInterval(i) -then- f(1, true) -when [now - start > duration], where [now = +new Date], given.e, 30),
+      cosine_tween(x) = Math.cos(x * Math.PI) * -0.5 + 0.5,
+      animate         = animator(400, cosine_tween),
 
 # Rendering
 

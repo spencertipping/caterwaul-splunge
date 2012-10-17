@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  e1f811ae0d9a4b1bae728478bfce5e1c
-# istate: 48382d7ec1f26e6e5230c166616979b9
+# state:  97ec70c3ffd1fe43eb0941bf50198bc1
+# istate: b2c04b101b9899ad0dc6cd57041f34bb
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1968,10 +1968,10 @@ Uses setInterval and measures 'real time' between calls to find interpolation po
 jQuery. Generally you would store the duration and tween values using currying, as for the animate() definition below. Animation functions return the interval used to drive the loop, so you can call
 clearInterval on the result to stop the animation.
 
-  animator(duration, tween)(f, i = null, now = +new Date) = i = setInterval(f(tween(Math.min(1, (+new Date - now) / duration))) -then-
-                                                                                                               clearInterval(i) -then- f(1, true) -when [+new Date + start > duration] , given.e, 30),
-  cosine_tween(x)                                         = Math.cos(x) * -0.5 + 0.5,
-  animate                                                 = animator(400, cosine_tween),
+  animator(duration, tween)(f, i = null, start = +new Date) = i = setInterval(Math.min(1, (now - start) / duration) /!tween /!f <then>
+                                                                              clearInterval(i) -then- f(1, true) -when [now - start > duration], where [now = +new Date], given.e, 30),
+  cosine_tween(x) = Math.cos(x * Math.PI) * -0.5 + 0.5,
+  animate         = animator(400, cosine_tween),
 
 Rendering.
 Most of the time you will probably want to fill in chart elements and stroke a border to provide some visual space between them. The only real variant is the color (and opacity) of the fill. This can

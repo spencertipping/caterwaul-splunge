@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <title></title>
+  <script src='jquery.min.js'></script>
+  <script src='caterwaul.min.js'></script>
+  <script src='caterwaul.std.min.js'></script>
+  <script src='caterwaul.ui.min.js'></script>
+  <script src='../caterwaul-splunge.js'></script>
+  <script>
+    $(caterwaul(':all')(function () {
+      $('#splunge-test').mousemove(selected_data = chart.find([e.pageX, e.pageY]) -re [it && it.data -se- $('title').text(it)], render(current), given.e)
+                        .mousedown(su.animator(2000, su.cosine_tween)(render(current = chart.interpolate(chart.slice(slice.bound().inverse()), x)),
+                                                                      chart /eq [chart.slice(slice.bound().inverse())] -when- done,
+                                                                      given [x, done]),
+                                   when.slice,
+                                   where [slice = chart.find([e.pageX, e.pageY])], given.e),
+
+      where [s                = caterwaul.splunge,
+             su               = caterwaul.splunge_ui,
+             selected_data    = null,
+             count            = 0,
+
+             cantor(x, y, dy) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, y], [s.infinity, dy]),
+                                                      children() = this.children_ -dcq- [s.rectangle(++count, [x, y], [0.08, dy]), cantor(x + 0.08, y, dy / 3), cantor(x + 0.08, y + dy * 2/3, dy / 3)]]),
+
+             chart            = s.radial_chart(cantor(0.1, -1, 1.9), {view: s.centered_in($('#splunge-test')[0])}),
+             current          = chart,
+             render           = su.chart_renderer("su.rgba(_.bound().untransformed_.v[1] * 0.5 + 0.5, _.data === selected_data ? 1 : 0.5, 1, 0.8)".qf,
+                                                  $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['white'], 20)]}));
+  </script>
+</head>
+<body style='margin:0;overflow:hidden'>
+  <canvas id='splunge-test' width='1024' height='600'></canvas>
+</body>
+</html>
