@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  6dea58ec9a0fef01dc370916dcba1e58
-# istate: 1cce56b6b55e5b660b7decaca73c346f
+# state:  fa498642d640f6d39ef44ab3254ac664
+# istate: f975238513b97704a13d6b85b4fc8b7c
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1865,11 +1865,12 @@ library we use the bound-nesting property.
   bounds are contained within the bounding box. You should call renderable() on the result to provide two more useful methods, transform_with() and interpolate(). These are derived from bound() and
   children().
 
-  renderable(x)                    = x /-$.merge/ capture [interpolate(b, x)              = bounded_interpolation(this, b, x),
-                                                           transform_with(t, self = this) = "self.children() *[x.transform_with(t)] -seq".qf / t /!lazy_bounded /!cached],
+  renderable(x)                    = x /-$.merge/ capture [interpolate(b, x) = bounded_interpolation(this, b, x),
+                                                           transform_with(t) = capture [force()    = this.forced_ -dcq- bounded(xs *[x.transform_with(t)] -seq),
+                                                                                        bound()    = this.force().bound(),
+                                                                                        children() = this.force().children()] /!renderable -where [xs = this.children()]],
 
-  bounded(xs)                           = capture [bound() = bound, children() = children] /!renderable -where [bound    = xs *[x.bound()] /[x0 /~union/ x] -seq,
-                                                                                                                children = xs.slice() /~sort/ by("dot_ordering(bound, _)".qf)],
+  bounded(xs)                      = capture [bound() = bound, children() = xs] /!renderable -where [bound = xs *[x.bound()] /[x0 /~union/ x] -seq],
 
   scale_size(l, x, b = l.bound())  = l.transform_with(translate(b.v) / scale([x, x]) /-composite/ translate([-b.v[0], -b.v[1]])),
   bounded_interpolation(l1, l2, x) = x === 0 ? l1 : x === 1 ? l2 : l1 === l2 ? l1 : bounded([scale_size(l1, 1 - x), scale_size(l2, x)]),   // FIXME
