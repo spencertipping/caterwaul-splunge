@@ -10,14 +10,13 @@
     $(caterwaul(':all')(function () {
       $('#splunge-test').mousemove(render(chart.slice(chart.transform().inverse().transform([e.pageX, e.pageY]) /-s.box/ [1, 1])), given.e),
       where [s                = caterwaul.splunge,
+             su               = caterwaul.splunge_ui,
 
              cantor(x, y, dy) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, y], [s.infinity, dy]),
                                                       children() = this.children_ -dcq- [s.box([x, y], [0.02, dy]), cantor(x + 0.03, y, dy / 3), cantor(x + 0.03, y + dy * 2/3, dy / 3)]]),
 
-             chart            = s.radial_chart(cantor(0, 0, 0.9), {view: s.centered_in($('#splunge-test')[0])}),
-             render(c)        = c.with_context($('#splunge-test')[0].getContext('2d'),
-                                               given.context [context.fillStyle = 'white', context.fillRect(-2, -2, 4, 4),
-                                                              context.fillStyle = 'green', this.render("_(context), context.closePath(), context.fill()".qf, 1)])]}));
+             chart            = s.radial_chart(cantor(0.1, -1, 1.9), {view: s.centered_in($('#splunge-test')[0])}),
+             render           = su.chart_renderer("su.rgba(_.bound().untransformed_.v[1] * 0.5 + 0.5, 1, 1, 0.8)".qf, $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['white'], 4)]}));
   </script>
 </head>
 <body style='margin:0;overflow:hidden'>

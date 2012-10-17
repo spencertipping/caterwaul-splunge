@@ -6,6 +6,10 @@ Splunge constructs hierarchical ring charts and provides forward and backward tr
 gives you a great deal of flexibility. In particular, it lets you (1) construct the data lazily (though the lazy process must be synchronous), (2) use custom rendering and hit detection, and (3) process
 infinite data sets, provided that you use some heuristic such as minimum viewable area to limit the number of objects you try to render.
 
+  Immutability and caching.
+  Almost all Splunge objects are immutable by design. However, Splunge uses a lot of mutability under the hood to increase performance, usually by caching stuff. The rule is that any state changes in the
+  data can't impact semantics. Also, any mutable state is stored as a field ending with an underscore. (By the way, some immutable state is also stored this way; see chart_ctor for an example.)
+
 caterwaul.module('splunge', ':all', function ($) {
   $.splunge = wcapture [
 
@@ -67,7 +71,7 @@ transformations.
 
                       children() = [],                                               toString()        = '[#{this.v[0]},#{this.v[1]} -> #{this.dv[0]},#{this.dv[1]}]',
                       intern(v)  = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv, map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
-                      plus(b)    = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),  transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
+                      plus(b)    = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),  transform_with(t) = this /~map_corners/ "t /~transform/ _".qf -se- it.untransformed_ /eq.this,
                       scale(x)   = box(this.v /-vscale/ x,  this.dv /-vscale/ x),    bound()           = this,
                       times(v)   = box(this.v, v /-vtimes/ this.dv),                 inverse()         = box([-this.v[0] / this.dv[0], -this.v[1] / this.dv[1]], [1 / this.dv[0], 1 / this.dv[1]])],
 
@@ -119,7 +123,8 @@ the transformation legitimately breaks the arcs, not due to a bug here).
 
   no_path(b)(c)                                              = null,
   rectangle_path(b)(c)                                       = c.beginPath() -then- c.rect(b.v[0], b.v[1], b.dv[0], b.dv[1]),
-  arc_path(b, p = b /~transform_with/ cartesian_to_polar)(c) = c.beginPath() -then- c.arc(0, 0, p.v[0], p.v[1], p.v[1] + p.dv[1], true) -then- c.arc(0, 0, p.v[0] + p.dv[0], p.v[1] + p.dv[1], p.v[1]),
+  arc_path(b, p = b /~transform_with/ cartesian_to_polar)(c) = c.beginPath() -then- c.arc(0, 0, p.v[0], p.v[1], p.v[1] + p.dv[1], true)
+                                                                             -then- c.arc(0, 0, p.v[0] + p.dv[0], p.v[1] + p.dv[1], p.v[1]) -then- c.closePath(),
 
 Canvas interaction.
 This isn't a complete interaction layer, but it gives you some useful functions for common cases. In particular, these functions are focused on maintaining a "current view transformation" for the
@@ -152,5 +157,5 @@ This isn't a complete interaction layer, but it gives you some useful functions 
   rectangular_defaults            = {transform: bounding_box([-1, -1] /-box/ [2, 2 - epsilon]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.area()".qf},
   radial_defaults                 = {transform: polar_to_cartesian / scale([1, Math.PI]) / bounding_box([0, -1] /-box/ [1, 2 - epsilon]) /-composite/ x_arctangent,
                                      slice:     [1, 1] /!scale,
-                                     area:      "_.transform_with(cartesian_to_polar) /!polar_area".qf}],
+                                     area:      "polar_area(_.transform_with(cartesian_to_polar))".qf}],
   using [caterwaul.numeric_offline_2]});
