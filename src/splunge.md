@@ -83,8 +83,8 @@ The x_stack() and y_stack() functions translate and scale a series of rectangles
     box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-infinity, -infinity], [2 * infinity, 2 * infinity]),
     rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([        0,         0], [           0,            0]),
 
-    x_stack(rs, h, x = 0, total = h || rs /[0][x0 + x.bound().dv[0]] -seq) = rs *r[r.transform_with([x - r.bound().v[0], 0] /-box/ [1 / total, 1]) -se [x += r.bound().dv[0] / total]] -seq,
-    y_stack(rs, h, y = 0, total = h || rs /[0][x0 + x.bound().dv[1]] -seq) = rs *r[r.transform_with([0, y - r.bound().v[1]] /-box/ [1, 1 / total]) -se [y += r.bound().dv[1] / total]] -seq,
+    x_stack(rs, h, x = 0, total = (h || 1) / (rs /[0][x0 + x.bound().dv[0]] -seq)) = rs *r[r.transform_with([x - r.bound().v[0], 0] /-box/ [1 / total, 1]) -se [x += r.bound().dv[0] / total]] -seq,
+    y_stack(rs, h, y = 0, total = (h || 1) / (rs /[0][x0 + x.bound().dv[1]] -seq)) = rs *r[r.transform_with([0, y - r.bound().v[1]] /-box/ [1, 1 / total]) -se [y += r.bound().dv[1] / total]] -seq,
 
 # Infinite data sets
 
