@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  194e6e6d85c59afefc705547f15d1294
-# istate: 3e289ec4f9c5ecb39144891457594467
+# state:  19457abdc30ac4ae84a84b90fc2d45ae
+# istate: 712a78ecb0c175d8d7ab90c921b95f3e
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1974,8 +1974,8 @@ whether the user is hovering on something. HSV values are always in the range [0
 If you are rendering into a canvas and want a fillStyle or strokeStyle, you can use rgba() to get a properly-formatted string from an HSVA color.
 
   rgba(h, s, v, a, cs = rgb(h, s, v))                                                               = 'rgba(#{cs[0] * 255 >>> 0}, #{cs[1] * 255 >>> 0}, #{cs[2] * 255 >>> 0}, #{a})',
-  rgb(h, s, v, c = v * s, x = 1 - Math.abs(h*6 % 2 - 1), m = v - c, c1 = c + m, c2 = x + m, c3 = m) = h < 0.5 ? h < 1/6 ? [c1, c2, c3] : h < 1/3 ? [c2, c1, c3] : [c3, c1, c2] :
-                                                                                                                h < 2/3 ? [c3, c2, c1] : h < 5/6 ? [c2, c3, c1] : [c3, c2, c1],
+  rgb(h, s, v, c = v * s, x = 1 - Math.abs(h*6 % 2 - 1), m = v - c, c1 = c + m, c2 = x + m, c3 = m) = h < 1/2 ? h < 1/6 ? [c1, c2, c3] : h < 1/3 ? [c2, c1, c3] : [c3, c1, c2] :
+                                                                                                                h < 2/3 ? [c3, c2, c1] : h < 5/6 ? [c2, c3, c1] : [c1, c3, c2],
 
 Animation.
 Uses setInterval and measures 'real time' between calls to find interpolation points. You can supply your own interpolator, or use the default cosine interpolation used by many frameworks including

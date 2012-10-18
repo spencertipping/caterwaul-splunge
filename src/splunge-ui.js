@@ -6,7 +6,7 @@ var m = v - c;
 var c1 = c + m;
 var c2 = x + m;
 var c3 = m;
- return h < 0.5 ? h < 1/6 ? [c1, c2, c3 ]: h < 1/3 ? [c2, c1, c3 ]: [c3, c1, c2 ]: h < 2/3 ? [c3, c2, c1 ]: h < 5/6 ? [c2, c3, c1 ]: [c3, c2, c1]} , animator =function (duration, tween) { ;
+ return h < 1/2 ? h < 1/6 ? [c1, c2, c3 ]: h < 1/3 ? [c2, c1, c3 ]: [c3, c1, c2 ]: h < 2/3 ? [c3, c2, c1 ]: h < 5/6 ? [c2, c3, c1 ]: [c1, c3, c2]} , animator =function (duration, tween) { ;
  return function (f) {var i = null;
 var start = +new Date;
  return i = setInterval( (function (e) {return(function () {var now = +new Date;

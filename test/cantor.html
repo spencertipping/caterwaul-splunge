@@ -13,10 +13,10 @@
              su               = caterwaul.splunge_ui,
 
              cantor(x, y, dy) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, y], [s.infinity, dy]),
-                                                      children() = this.children_ -dcq- [s.box([x, y], [0.02, dy]), cantor(x + 0.03, y, dy / 3), cantor(x + 0.03, y + dy * 2/3, dy / 3)]]),
+                                                      children() = this.children_ -dcq- [s.box([x, y], [0.2, dy]), cantor(x + 0.3, y, dy / 3), cantor(x + 0.3, y + dy * 2/3, dy / 3)]]),
 
-             chart            = s.radial_chart(cantor(0.1, -1, 1.9), {view: s.centered_in($('#splunge-test')[0])}),
-             render           = su.chart_renderer("su.rgba(_.bound().untransformed_.v[1] * 0.5 + 0.5, 1, 1, 0.8)".qf, $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['white'], 4)]}));
+             chart            = s.radial_chart(cantor(0.1, 0, 1), {view: s.centered_in($('#splunge-test')[0])}),
+             render           = su.chart_renderer("su.rgba(_.bound().v[1] / s.tau, 1, 1, 0.8)".qf, $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['white'], 4)]}));
   </script>
 </head>
 <body style='margin:0;overflow:hidden'>
