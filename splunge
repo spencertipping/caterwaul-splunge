@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  536f77ee58c0f3ee60b0c76b5c3bc4a1
-# istate: 9fa673662b824ea4cacc8a2bf615ba2f
+# state:  194e6e6d85c59afefc705547f15d1294
+# istate: 3e289ec4f9c5ecb39144891457594467
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1125,6 +1125,10 @@ with_exported($name, sub {
   sh("$waul --output '$output' $extensions $exported")});
 
 __
+meta::hook('after-edit::render-source', <<'__');
+render('-MW');
+
+__
 meta::hook('before-shell::ad', <<'__');
 ad('sdoc::');
 
@@ -1818,7 +1822,9 @@ http://en.wikipedia.org/wiki/Machine_epsilon for ways to compute it.
   x_tangent          = capture [transform = componentwise(scaled_tan, "_".qf), inverse() = x_arctangent],  x_arctangent = capture [transform = componentwise(scaled_atan, "_".qf), inverse() = x_tangent],
   y_tangent          = capture [transform = componentwise("_".qf, scaled_tan), inverse() = y_arctangent],  y_arctangent = capture [transform = componentwise("_".qf, scaled_atan), inverse() = y_tangent],
   polar_to_cartesian = capture [transform(v, d = v[0],      t = v[1])                   = [d * Math.cos(t), d * Math.sin(t)], inverse() = cartesian_to_polar],
-  cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[0], v[1])) = [d, (t + tau) % tau],               inverse() = polar_to_cartesian],
+  cartesian_to_polar = capture [transform(v, d = v /!vnorm, t = Math.atan2(v[1], v[0])) = [d, (t + tau) % tau],               inverse() = polar_to_cartesian],
+
+  identity_transform = capture [transform(v) = v, inverse() = identity_transform],
 
   bounding_box(b)    = capture [transform(v) = b /~intern/ v, inverse() = identity_transform],  identity_transform = capture [transform(v) = v, inverse() = this],
 
@@ -1851,7 +1857,7 @@ transformations.
 
                       children() = [],                                               toString()        = '[#{this.v[0]},#{this.v[1]} -> #{this.dv[0]},#{this.dv[1]}]',
                       intern(v)  = v |-vmax| this.v |-vmin| this.v /-vplus/ this.dv, map_corners(f)    = rectangle(this.data, c1, c2 /-vminus/ c1) -where [c1 = f(this.v), c2 = f(this.v /-vplus/ this.dv)],
-                      plus(b)    = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),  transform_with(t) = this /~map_corners/ "t /~transform/ _".qf -se- it.untransformed_ /eq.this,
+                      plus(b)    = box(this.v /-vplus/ b.v, this.dv /-vplus/ b.dv),  transform_with(t) = this /~map_corners/ "t /~transform/ _".qf,
                       scale(x)   = box(this.v /-vscale/ x,  this.dv /-vscale/ x),    bound()           = this,
                       times(v)   = box(this.v, v /-vtimes/ this.dv),                 inverse()         = box([-this.v[0] / this.dv[0], -this.v[1] / this.dv[1]], [1 / this.dv[0], 1 / this.dv[1]])],
 
@@ -1887,24 +1893,11 @@ library we use the bound-nesting property.
 Rendering.
 The most important/difficult aspect of rendering is drawing the paths that represent objects. These functions do that for you, at the same time using some optimizations to avoid rendering elements that
 won't be visible. We can do this because of the way bounding boxes work: the bounding box of any given stack completely contains the bounding boxes of its children (except for certain cases involving
-lazy data; see above). Under this assumption, we can stop rendering when the intersection between the bounding box and the view area is too small.
+lazy data; see above). Under this assumption, we can stop rendering when the intersection between the bounding box and the view area is too small. If you are using the chart constructors defined below,
+then all of this is taken care of for you.
 
-When this happens depends on the view transform. If something like the arctangent transformation is used, then all space is theoretically visible, but it will become arbitrarily small as the distance
-from the focal point increases. Using a minimal-area heuristic is ideal for situations like this, and it also covers the usual clipping case. (See examples in test/)
-
-The arc_path() function is coded strangely, but it needs to be this way. Here's the story. If you're using arc_path to render your data, then you're rendering data whose coordinates are specified in
-polar form -- so your boxes are in the form [[rho, theta], [drho, dtheta]]. And if the user is going to interact with this meaningfully, you'll need to convert any mouse coordinates into polar form as
-well, so one of the view transformations will be polar_to_cartesian so that you get the inverse cartesian_to_polar operating on the mouse coordinates.
-
-Well, one of the side-effects of having a view transformation is that your data will be transformed prior to being rendered: so all of those polar coordinates our data used to have will be converted to
-regular Cartesian coordinates via the polar_to_cartesian transform. However, the arc() method uses polar coordinates. So we undo the transformation right before rendering the arc. Note that this is a
-hack that breaks some stuff; in particular, any transformations you make after polar_to_cartesian() must preserve the polar coordinates of those points; otherwise your arcs won't render properly (because
-the transformation legitimately breaks the arcs, not due to a bug here).
-
-  no_path(b)(c)                                              = null,
-  rectangle_path(b)(c)                                       = c.beginPath() -then- c.rect(b.v[0], b.v[1], b.dv[0], b.dv[1]),
-  arc_path(b, p = b /~transform_with/ cartesian_to_polar)(c) = c.beginPath() -then- c.arc(0, 0, p.v[0], p.v[1], p.v[1] + p.dv[1], true)
-                                                                             -then- c.arc(0, 0, p.v[0] + p.dv[0], p.v[1] + p.dv[1], p.v[1]) -then- c.closePath(),
+  rectangle_path(b)(c) = c.beginPath() -then- c.rect(b.v[0], b.v[1], b.dv[0], b.dv[1]),
+  arc_path(b)(c)       = c.beginPath() -then- c.arc(0, 0, b.v[0], b.v[1], b.v[1] + b.dv[1]) -then- c.arc(0, 0, b.v[0] + b.dv[0], b.v[1] + b.dv[1], b.v[1], true) -then- c.closePath(),
 
 Canvas interaction.
 This isn't a complete interaction layer, but it gives you some useful functions for common cases. In particular, these functions are focused on maintaining a "current view transformation" for the
@@ -1914,30 +1907,51 @@ This isn't a complete interaction layer, but it gives you some useful functions 
   context_box(b)(c)                                                = c.translate(b.v[0], b.v[1]) -then- c.scale(b.dv[0], b.dv[1]) -then- c,  zoom(b, dv) = b /~transform_dv_with/ scale(dv).inverse(),
   centered_in(c, w = +c.width, h = +c.height, m = w /-Math.min/ h) = [w >> 1, h >> 1] /-box/ [m >> 1, m >> 1],
 
-  chart_ctor = given[transform, path, area, view, slice, data][this.transform_ = transform, this.path_  = path,  this.area_ = area,
-                                                               this.view_      = view,      this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
+Chart constructor.
+This code deserves some explanation. Charts are immutable collections of a bunch of other things that ultimately form something that you can render. Like many other objects in Splunge, charts support
+interpolation via the interpolate() method. This interpolates the variant components of two charts. Chart invariants (not propagated through interpolation) are:
 
-               capture [slice(s, d, v)         = new this.constructor(this.transform_, this.path_, this.area_, v || this.view_, s || this.slice_, d || this.data_),
+| 1. The transformation applied to the data after slicing and before rendering
+  2. The path function used to render each data element
+  3. The function used to compute the virtual area of a given data element (later multiplied by the view box area to get total pixel area)
+  4. The "surface transform", a transformation that reflects what the path function does
+
+Variants are:
+
+| 1. The view transform, a transformation that positions the chart within pixel-space in a canvas (used to transform the context before rendering, and to transform mouse coordinates)
+  2. The "data slice" box, the first transformation that is applied to the data -- the user will generally explore the data by varying this
+  3. The data itself, which is variant to allow you to animate edits or make it interactive
+
+At first I thought rectangular and radial charts were two special cases of a more generalized pipeline of transformations applied against data (along with a path function). However, transformations
+aren't as pure as is necessary for this to work. For example, the previous implementation used polar_to_cartesian as part of the 'transform' field of radial charts, which then required inversion before
+the paths were constructed. Even worse, inversion had to be done to compute the visible arc area. The problem with this is that Y-coordinates are modulo-wrapped around τ by the cartesian_to_polar
+transform, and the zero point could have originated with any number of angles. So while most transformations are bijective for many points, polar coordinate conversion wasn't bijective enough to be used
+and subsequently inverted as part of the rendering process. The fix for this was to introduce the surface transform, which allows you to describe the operation of the path function without actually
+transforming your data that way.
+
+  chart_ctor = given[transform, path, area, surface, view, slice, data][this.transform_ = transform, this.path_  = path,  this.area_ = area, this.surface_ = surface,
+                                                                        this.view_      = view,      this.slice_ = slice, this.data_ = data, null] -se- it.prototype /-$.merge/
+
+               capture [slice(s, d, v)         = new this.constructor(this.transform_, this.path_, this.area_, this.surface_, v || this.view_, s || this.slice_, d || this.data_),
                         interpolate(c, x)      = this.slice(this.slice_.interpolate(c.slice_, x), this.data_.interpolate(c.data_, x), this.view_.interpolate(c.view_, x)),
                         transformed_data()     = this.data_ |~transform_with| this.transform_ /-composite/ this.slice_,
                         visible_data(f, limit) = descend_while("area_fn(_.bound()) > limit_area && f(_)".qf, where [area_fn = this.area_, limit_area = limit / this.view_.area()],
                                                                this.transformed_data()),
 
                         transform_context(c)   = context_box(this.view_)(c) -se [c.lineWidth /= this.view_.dv[0] /-Math.max/ this.view_.dv[1]],
-                        transform()            = this.composite_transform_ -dcq- composite(this.view_, this.transform_, this.slice_),
+                        transform()            = this.composite_transform_ -dcq- composite(this.view_, this.surface_, this.transform_, this.slice_),
 
                         with_context(c, f)     = c.save() -then- r /eq [f.call(this, this.transform_context(c))] -then- c.restore() -then- r -where [r = null],
                         render(f, limit)       = this.visible_data("_.children().length || f(p(_.bound()), _)".qf, limit || 1) -where [p = this.path_],
                         find(v)                = find_point(this.transform().inverse().transform(v), this.data_)],
 
-  rectangular_chart(data, options, options = {} / rectangular_defaults /-$.merge/ options) = new chart_ctor(options.transform, rectangle_path, options.area, options.view, options.slice, data),
-  radial_chart     (data, options, options = {} / radial_defaults      /-$.merge/ options) = new chart_ctor(options.transform, arc_path,       options.area, options.view, options.slice, data),
+  rectangular_chart(data, o, o = {} / rectangular_defaults /-$.merge/ o) = new chart_ctor(o.transform, rectangle_path, o.area, identity_transform, o.view, o.slice, data),
+  radial_chart     (data, o, o = {} / radial_defaults      /-$.merge/ o) = new chart_ctor(o.transform, arc_path,       o.area, polar_to_cartesian, o.view, o.slice, data),
 
   polar_area(box, dr = box.dv[0]) = box.dv[1] * (2 * box.v[0] * dr + dr * dr) /!Math.abs,
-  rectangular_defaults            = {transform: bounding_box([-1, -1] /-box/ [2, 2 - epsilon]) /-composite/ x_arctangent, slice: [1, 1] /!scale, area: "_.area()".qf},
-  radial_defaults                 = {transform: polar_to_cartesian / box([0.5, 0], [0.5, tau - 0.001]) / bounding_box([-1, 0] /-box/ [2, 1]) /-composite/ x_arctangent,
-                                     slice:     [1, 1] /!scale,
-                                     area:      "_.transform_with(cartesian_to_polar) /!polar_area".qf}],
+  rectangular_defaults            = {transform:                             bounding_box([-1, -1] /-box/ [2, 2]) /-composite/ x_arctangent,  slice: [1, 1] /!scale,  area: "_.area()".qf},
+  radial_defaults                 = {transform: box([0.5, 0], [0.5, tau]) / bounding_box([-1,  0] /-box/ [2, 1]) /-composite/ x_arctangent,  slice: [1, 1] /!scale,  area: polar_area}],
+
   using [caterwaul.numeric_offline_2]});
 
 __
@@ -1981,8 +1995,8 @@ ahead-of-time or per-element using a side-effect in the color_fn in the unlikely
 Within these rendering functions, the line style and background color are assumed to be the same thing.
 
   renderer(color_fn, context)(path_fn, element)   = path_fn(context) <then> context.fillStyle -eq- color_fn(element) <then> context.fill() <then> context.stroke(),
-  chart_renderer(color_fn, context, limit)(chart) = context.fillStyle -eq- context.strokeStyle <then> context.fillRect(-1e8, -1e8, 2e8, 2e8) <then>
-                                                    chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c)],
+  chart_renderer(color_fn, context, limit)(chart) = context.fillStyle -eq- context.strokeStyle <then> context.fillRect(v.v[0] - v.dv[0], v.v[1] - v.dv[1], 2*v.dv[0], 2*v.dv[1]) -where [v = chart.view_]
+                                                                                               <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c)],
   using [caterwaul.splunge]});
 
 __
