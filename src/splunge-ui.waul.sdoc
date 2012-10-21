@@ -39,10 +39,10 @@ be different from the background and this looks strange.
 
   renderer(color_fn, context)(path_fn, element)   = path_fn(context) <then> context.fillStyle -eq- color_fn(element) <then> context.fill() <then> context.stroke(),
   chart_renderer(color_fn, context, limit)(chart) = context.fillStyle -eq- context.strokeStyle <then> context.fillRect(v.v[0] - v.dv[0], v.v[1] - v.dv[1], 2*v.dv[0], 2*v.dv[1]) -where [v = chart.view_]
-                                                                                               <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c),
+                                                                                               <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit || 4) -given.c),
 
   subchart_renderer(color_fn, context, background, limit)(chart) = context.fillStyle -eq- background
                                                                    <then> context.beginPath() <then> context.arc(v.v[0], v.v[1], v.dv[0] /-Math.max/ v.dv[1], 0, tau) -where [v = chart.view_]
                                                                    <then> context.closePath() <then> context.fill()
-                                                                   <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c)],
+                                                                   <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit || 4) -given.c)],
   using [caterwaul.splunge]});

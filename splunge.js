@@ -1,7 +1,7 @@
 (function(f){return f(f)})(function(initializer){var calls_init=function(){var f=function(){return f.init.apply(f,arguments)};return f},original_global=typeof caterwaul==="undefined"?undefined:caterwaul,caterwaul_global=calls_init();
 caterwaul_global.deglobalize=function(){caterwaul=original_global;return caterwaul_global};caterwaul_global.core_initializer=initializer;caterwaul_global.context=this;
-caterwaul_global.merge=(function(o){for(var k in o){if(o.hasOwnProperty(k)){return true}}})({toString:true})?function(o){for(var i=1,l=arguments.length,_;i<l;++i){if(_=arguments[i]){for(var k in _){if(has(_,k)){o[k]=_[k]
-}}}}return o}:function(o){for(var i=1,l=arguments.length,_;i<l;++i){if(_=arguments[i]){for(var k in _){if(has(_,k)){o[k]=_[k]}}if(_.toString&&!/\[native code\]/.test(_.toString.toString())){o.toString=_.toString
+caterwaul_global.merge=(function(o){for(var k in o){if(o.hasOwnProperty(k)){return true}}})({toString:true})?function(o){for(var i=1,l=arguments.length,_;i<l;++i){if(_=arguments[i]){for(var k in _){if(Object.prototype.hasOwnProperty.call(_,k)){o[k]=_[k]
+}}}}return o}:function(o){for(var i=1,l=arguments.length,_;i<l;++i){if(_=arguments[i]){for(var k in _){if(Object.prototype.hasOwnProperty.call(_,k)){o[k]=_[k]}}if(_.toString&&!/\[native code\]/.test(_.toString.toString())){o.toString=_.toString
 }}}return o},caterwaul_global.modules=[];caterwaul_global.module=function(name,transform,f){if(arguments.length===1){return caterwaul_global[name+"_initializer"]
 }name+"_initializer" in caterwaul_global||caterwaul_global.modules.push(name);f||(f=transform,transform=null);(caterwaul_global[name+"_initializer"]=transform?caterwaul_global(transform)(f):f)(caterwaul_global);
 return caterwaul_global};return caterwaul=caterwaul_global});
@@ -78,7 +78,7 @@ for (var xr = new xs.constructor() , xi = 0, xl = xs.length;
  return new box_ctor(v, [1, 1])} , bound_everything = box( [ -infinity, -infinity] , [2 * infinity, 2 * infinity]) , rectangle =function (data, v, dv) {var b = box(v, dv) ;
  return( b.data =data, b)} , scale =function (v) { ;
  return new box_ctor( [0, 0] , v)} , bound_nothing = box( [ 0, 0] , [ 0, 0]) , x_stack =function (rs, h) {var x = 0;
-var total = (h || 1) / ( (function (xs) {var x, x0, xi, xl, xr;
+var scale = (h || 1) / ( (function (xs) {var x, x0, xi, xl, xr;
 for (var x0 = (0) , xi = 0, xl = xs.length;
  xi < xl;
  ++xi) x = xs[xi] , x0 = (x0 + x.bound() .dv[0]) ;
@@ -86,9 +86,9 @@ for (var x0 = (0) , xi = 0, xl = xs.length;
  return(function (rs) {var r, r0, ri, rl, rr;
 for (var rr = new rs.constructor() , ri = 0, rl = rs.length;
  ri < rl;
- ++ri)r = rs[ri] , rr.push( ( (function (it) {return x += r.bound() .dv[0] / total, it}) .call(this, (r.transform_with(box( [x - r.bound() .v[0] , 0] , [1 / total, 1])))))) ;
+ ++ri)r = rs[ri] , rr.push( ( (function (it) {return x += r.bound() .dv[0] * scale, it}) .call(this, (r.transform_with(box( [x - r.bound() .v[0] , 0] , [1 * scale, 1])))))) ;
  return rr}) .call(this, rs)} , y_stack =function (rs, h) {var y = 0;
-var total = (h || 1) / ( (function (xs) {var x, x0, xi, xl, xr;
+var scale = (h || 1) / ( (function (xs) {var x, x0, xi, xl, xr;
 for (var x0 = (0) , xi = 0, xl = xs.length;
  xi < xl;
  ++xi) x = xs[xi] , x0 = (x0 + x.bound() .dv[1]) ;
@@ -96,7 +96,7 @@ for (var x0 = (0) , xi = 0, xl = xs.length;
  return(function (rs) {var r, r0, ri, rl, rr;
 for (var rr = new rs.constructor() , ri = 0, rl = rs.length;
  ri < rl;
- ++ri)r = rs[ri] , rr.push( ( (function (it) {return y += r.bound() .dv[1] / total, it}) .call(this, (r.transform_with(box( [0, y - r.bound() .v[1]] , [1, 1 / total])))))) ;
+ ++ri)r = rs[ri] , rr.push( ( (function (it) {return y += r.bound() .dv[1] * scale, it}) .call(this, (r.transform_with(box( [0, y - r.bound() .v[1]] , [1, 1 * scale])))))) ;
  return rr}) .call(this, rs)} , renderable =function (x) { ;
  return $.merge( x, {interpolate:function (b, x) { ;
  return bounded_interpolation(this, b, x)} , transform_with:function (t) { ;
@@ -183,10 +183,10 @@ var start = +new Date;
  return( ( ( path_fn(context) , context.fillStyle = color_fn(element)) , context.fill()) , context.stroke())}} , chart_renderer =function (color_fn, context, limit) { ;
  return function (chart) { ;
  return( ( context.fillStyle = context.strokeStyle, (function () {var v = chart.view_;
- return context.fillRect(v.v[0] - v.dv[0] , v.v[1] - v.dv[1] , 2*v.dv[0] , 2*v.dv[1])}) .call(this)) , chart.with_context(context, (function (c) {return chart.render(renderer(color_fn, c) , limit)})))}} , subchart_renderer =function (color_fn, context, background, limit) { ;
+ return context.fillRect(v.v[0] - v.dv[0] , v.v[1] - v.dv[1] , 2*v.dv[0] , 2*v.dv[1])}) .call(this)) , chart.with_context(context, (function (c) {return chart.render(renderer(color_fn, c) , limit || 4)})))}} , subchart_renderer =function (color_fn, context, background, limit) { ;
  return function (chart) { ;
  return( ( ( ( ( context.fillStyle = background, context.beginPath()) , (function () {var v = chart.view_;
- return context.arc(v.v[0] , v.v[1] ,Math.max( v.dv[0] , v.dv[1]) , 0, tau)}) .call(this)) , context.closePath()) , context.fill()) , chart.with_context(context, (function (c) {return chart.render(renderer(color_fn, c) , limit)})))}} ;
+ return context.arc(v.v[0] , v.v[1] ,Math.max( v.dv[0] , v.dv[1]) , 0, tau)}) .call(this)) , context.closePath()) , context.fill()) , chart.with_context(context, (function (c) {return chart.render(renderer(color_fn, c) , limit || 4)})))}} ;
  return{ rgba: rgba, rgb: rgb, animator: animator, cosine_tween: cosine_tween, animate: animate, faster_tween: faster_tween, fast_animate: fast_animate, renderer: renderer, chart_renderer: chart_renderer, subchart_renderer: subchart_renderer}}) .call(this)}) .call(this)}) ;
 result.caterwaul_expression_ref_table = {e1: ( "caterwaul.splunge")} ;
 return(result)}) .call(this,caterwaul.splunge)) ;

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  9e43952bc700c8d26ff8be10f54d40f7
-# istate: 827555e9260b4425b7dc4047f299dbe0
+# state:  baebf2bbf1b3ef7f7d41f32051eafe19
+# istate: fa61ecfc007f86625eb74c8caf36db51
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -246,6 +246,7 @@ meta::functor::editable 'waul', inherit => 1, extension => '.waul', default => '
 
 __
 meta::alias('e', 'edit sdoc::waul::splunge');
+meta::alias('er', 'edit sdoc::readme');
 meta::alias('erf', 'edit function::render');
 meta::alias('eu', 'edit sdoc::waul::splunge-ui');
 meta::bootstrap('html', <<'__');
@@ -720,6 +721,8 @@ __
 meta::function('reload', 'around_hook(\'reload\', sub {execute($_) for grep ! /^bootstrap::/, keys %data});');
 meta::function('render', <<'__');
 my ($options, @stuff) = separate_options(@_);
+
+file::write('README.md', retrieve('markdown::readme'));
 
 sub waulfile {file::write("src/$_[0].waul.sdoc", retrieve("sdoc::waul::$_[0]"));
               file::write("src/$_[0].md",        retrieve("markdown::waul::$_[0]"))}
@@ -1781,6 +1784,72 @@ return undef unless $_[0] =~ /^sdocp::(.*)$/;
 exists $data{"sdoc::$1"} ? sdocp("sdoc::$1") : undef;
 
 __
+meta::sdoc('readme', <<'__');
+Splunge charting library.
+Splunge is a charting library designed to render cool-looking interactive visualizations of large or infinite datasets in a way that is reasonably intuitive to work with. See the [Cantor set
+example](http://spencertipping.com/caterwaul-splunge/test/cantor-click.html), for instance. There are some examples in `test/`, but they are written in Caterwaul. This readme covers its usage from
+vanilla Javascript.
+
+  Setup.
+  If you are using Caterwaul, include the `caterwaul-splunge.js` file. Otherwise, just include `splunge.js` or `splunge.min.js`. In either case you'll access Splunge via the `caterwaul` global, which is
+  useful because Caterwaul knows how to do jQuery-style noConflict via the `deglobalize()` function. You probably won't care about this. So here's the setup for a minimal Splunge chart:
+
+  | <!doctype html>
+    <html>
+    <head>
+      <script src='splunge.min.js'></script>
+    </head>
+    <body>
+      <canvas id='chart'></canvas>
+      <script src='render-stuff.js'></script>
+    </body>
+    </html>
+
+  Splunge has no dependencies on jQuery or other libraries and is under 4K minified and gzipped.
+
+  Data and charts.
+  The first thing you'll need to do is create some data. Let's create a noninteractive ring chart to start with. The way you do this is by creating a stacked bar graph and then wrapping it around the
+  origin with a `radial_chart`. Here's what `render-stuff.js` should look like so far:
+
+  | var s          = caterwaul.splunge;
+    var su         = caterwaul.splunge_ui;
+    var the_canvas = document.getElementById('chart');
+    var data       = {foo: 3, bar: 1, bif: 8, baz: 10};
+
+  The first thing we need to do is map each data element into a box. Boxes are Splunge's basic display unit; basically, a box is a rectangle that represents a chart item. For the data above we can just
+  create a flat list of boxes and stack them along the Y axis, which gets mapped to the angle of the radial chart:
+
+  | var unstacked_boxes = [];
+    for (var k in data)
+      if (data.hasOwnProperty(k))
+        unstacked_boxes.push(s.rectangle(k, [0, 0], [1, data[k]]));
+
+  Boxes are specified by a 2-vector of their corner and a 2-vector of their size, as shown here. We don't care where the boxes are placed right now, since we're about to have Splunge stack them for us.
+  The `rectangle()` function, incidentally, builds a box but attaches some data to it in the process. This value is arbitrary, but in this case is the item's name. We'll use this later to show the user
+  which item they are hovering over.
+
+  | var stacked_boxes = s.y_stack(unstacked_boxes);
+    var chart_data    = s.bounded(stacked_boxes);
+
+  The `bounded()` function takes an array of boxes (or other bounded things) and returns a parent for them. It computes the bounding box union, which Splunge uses internally to figure out how much stuff
+  it needs to render. Infinite bounding boxes are allowed and necessary for some situations like the Cantor set, which is nominally displayed onscreen in its entirety. Splunge stops rendering things when
+  their visible pixel area decreases beyond some point.
+
+  The next step now is to create the chart and render it to the screen. In order to do this, we need to figure out how we want to shade our data. I'm going to start with grayscale, which is easy in
+  Splunge because we can specify colors in HSV:
+
+  | var chart         = s.radial_chart(chart_data, {view: s.centered_in(the_canvas)});
+    var context       = the_canvas.getContext('2d');
+    var color_element = function (element) {
+      return su.rgba(0, 0, data[element.data] / 15, 0.8);
+    };
+    var render = su.chart_renderer(color_element, context);
+    context.strokeStyle = 'white';
+    render(chart);
+
+  And that's it! We now have [this](http://spencertipping.com/caterwaul-splunge/examples/readme-example.html).
+
+__
 meta::sdoc('waul::splunge', <<'__');
 Splunge hierarchical ring charts | Spencer Tipping
 Licensed under the terms of the MIT source code license
@@ -1864,8 +1933,8 @@ transformations.
   box(v, dv)                             = new box_ctor(v, dv),       translate(v) = new box_ctor(v, [1, 1]),  bound_everything = box([-infinity, -infinity], [2 * infinity, 2 * infinity]),
   rectangle(data, v, dv, b = box(v, dv)) = b.data /eq.data -then- b,  scale(v)     = new box_ctor([0, 0], v),  bound_nothing    = box([        0,         0], [           0,            0]),
 
-  x_stack(rs, h, x = 0, total = (h || 1) / (rs /[0][x0 + x.bound().dv[0]] -seq)) = rs *r[r.transform_with([x - r.bound().v[0], 0] /-box/ [1 / total, 1]) -se [x += r.bound().dv[0] / total]] -seq,
-  y_stack(rs, h, y = 0, total = (h || 1) / (rs /[0][x0 + x.bound().dv[1]] -seq)) = rs *r[r.transform_with([0, y - r.bound().v[1]] /-box/ [1, 1 / total]) -se [y += r.bound().dv[1] / total]] -seq,
+  x_stack(rs, h, x = 0, scale = (h || 1) / (rs /[0][x0 + x.bound().dv[0]] -seq)) = rs *r[r.transform_with([x - r.bound().v[0], 0] /-box/ [1 * scale, 1]) -se [x += r.bound().dv[0] * scale]] -seq,
+  y_stack(rs, h, y = 0, scale = (h || 1) / (rs /[0][x0 + x.bound().dv[1]] -seq)) = rs *r[r.transform_with([0, y - r.bound().v[1]] /-box/ [1, 1 * scale]) -se [y += r.bound().dv[1] * scale]] -seq,
 
 Infinite data sets.
 You can render and interact with infinite data sets provided that you specify some limit on what gets rendered. Usually this involves either things being out of bounds or things being too small to be
@@ -1997,12 +2066,12 @@ be different from the background and this looks strange.
 
   renderer(color_fn, context)(path_fn, element)   = path_fn(context) <then> context.fillStyle -eq- color_fn(element) <then> context.fill() <then> context.stroke(),
   chart_renderer(color_fn, context, limit)(chart) = context.fillStyle -eq- context.strokeStyle <then> context.fillRect(v.v[0] - v.dv[0], v.v[1] - v.dv[1], 2*v.dv[0], 2*v.dv[1]) -where [v = chart.view_]
-                                                                                               <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c),
+                                                                                               <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit || 4) -given.c),
 
   subchart_renderer(color_fn, context, background, limit)(chart) = context.fillStyle -eq- background
                                                                    <then> context.beginPath() <then> context.arc(v.v[0], v.v[1], v.dv[0] /-Math.max/ v.dv[1], 0, tau) -where [v = chart.view_]
                                                                    <then> context.closePath() <then> context.fill()
-                                                                   <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c)],
+                                                                   <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit || 4) -given.c)],
   using [caterwaul.splunge]});
 
 __
