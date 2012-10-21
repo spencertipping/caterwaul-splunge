@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  a8eb5d53de199cb052865297c3abe650
-# istate: 2214311ae147f73733b2c45d40b6c964
+# state:  3b59fa188b4b92d9dc83b8853cacc809
+# istate: f30efaa25effbbd98bfb71ea7adb19aa
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1848,6 +1848,10 @@ example](http://spencertipping.com/caterwaul-splunge/test/cantor-hover.html). Th
     render(chart);
 
   And that's it! We now have [this](http://spencertipping.com/caterwaul-splunge/examples/readme-example.html).
+
+  Infinite charts and stuff.
+  I could probably explain how to write infinite charts here, but it probably makes more sense to read [the literate
+  source](https://github.com/spencertipping/caterwaul-splunge/blob/master/src/splunge.md) to get a sense for what is happening under the hood.
 
 __
 meta::sdoc('waul::splunge', <<'__');

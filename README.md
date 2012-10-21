@@ -64,3 +64,8 @@ Splunge because we can specify colors in HSV:
     render(chart);
 
 And that's it! We now have [this](http://spencertipping.com/caterwaul-splunge/examples/readme-example.html).
+
+## Infinite charts and stuff
+
+I could probably explain how to write infinite charts here, but it probably makes more sense to read [the literate
+source](https://github.com/spencertipping/caterwaul-splunge/blob/master/src/splunge.md) to get a sense for what is happening under the hood.
