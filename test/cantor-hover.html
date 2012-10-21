@@ -18,13 +18,13 @@
 
              cantor(x, y, dy) = s.renderable(result = capture [bound()    = this.bound_    -dcq- s.box([x, y], [s.infinity, dy]),
                                                                children() = this.children_ -dcq-
-                                                                 [s.rectangle(++count, [x, y], [0.08, dy]) -se [it.parent_ = result],
+                                                                 [s.rectangle(++count, [x, y], [0.08, dy]),
                                                                   cantor(x + 0.08 + (result.child1_ -dcq- Math.random() * 0.02), y + (result.y1_ -dcq- Math.random() * dy * 0.1), dy / 3),
                                                                   cantor(x + 0.08 + (result.child2_ -dcq- Math.random() * 0.02), y + (result.y2_ -dcq- Math.random() * dy * -0.1) + dy * 2/3, dy / 3)]],
                                              where [result = null]),
 
              chart            = s.radial_chart(cantor(0.1, 0.2, 0.6), {slice: [-1, 0] /-s.box/ [3, 1], view: s.centered_in($('#splunge-test')[0])}),
-             subchart()       = selected && selected.parent_ && s.radial_chart(selected.parent_, {slice: selected.bound().inverse(), view: [px, py] /-s.box/ [100, 100]}),
+             subchart()       = selected && s.radial_chart(chart.data_, {slice: selected.bound().inverse(), view: [px, py] /-s.box/ [100, 100]}),
 
              render()         = su.chart_renderer("su.rgba(0.3, selected && _.data === selected.data ? 1 : 0.5, 1, 0.8)".qf,
                                                   $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['white'], 4)(chart)
