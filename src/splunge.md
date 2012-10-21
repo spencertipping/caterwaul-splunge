@@ -7,6 +7,8 @@ Splunge constructs hierarchical ring charts and provides forward and backward tr
 gives you a great deal of flexibility. In particular, it lets you (1) construct the data lazily (though the lazy process must be synchronous), (2) use custom rendering and hit detection, and (3) process
 infinite data sets, provided that you use some heuristic such as minimum viewable area to limit the number of objects you try to render.
 
+Incidentally, I use the notation τ = 2π, a convention described in some detail at http://tauday.com/tau-manifesto.
+
 ## Immutability and caching
 
 Almost all Splunge objects are immutable by design. However, Splunge uses a lot of mutability under the hood to increase performance, usually by caching stuff. The rule is that any state changes in the
@@ -20,17 +22,12 @@ data can't impact semantics. Also, any mutable state is stored as a field ending
 Transformations act on dimensions and bounding boxes. They can modify space in any way that preserves basic rectangular properties. In addition to transforming things forwards, they must also provide
 inverses. This allows externally-generated points such as mouse input to be mapped back through the transformation into logical space for event processing.
 
-Splunge comes with three transformations. One, the arctangent transform, is used to visually compress data along an axis. The axis that it transforms is compressed from (-∞, ∞) to (-1, 1), and
-monotonicity properties are preserved. Another is the cartesian_to_polar transform, which converts two axes into magnitude and angle and is suitable for turning bar charts into ring charts. The third is bounding,
-which linearly transforms space such that some bounding box is mapped to the unit square. The typical nesting is x_arctangent(cartesian_to_polar(zoom(data))), where the zoom step changes with user input (see
-"viewports").
-
 Transformations provide two methods, transform(v) and inverse(). t.inverse().inverse().transform(v) should be equivalent to t.transform(v), though t.inverse().transform(t.transform(v)) might not be
-equivalent to v in some cases.
+equivalent to v in some cases since transformations are not required to be bijective.
 
-Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the cartesian_to_polar coordinate transforms have Y components that vary from 0 to τ. This is deliberate. It's written this way
-so that you can use the cartesian_to_polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent transform you can then do a
-scale(x, x) transformation to make it fit inside a 2x by 2x box centered at the origin.
+Incidentally, the arctangent/tangent transforms normalize to (-1, 1) while the cartesian_to_polar coordinate transforms produce Y (which represents θ) components that vary from 0 to τ. This is
+deliberate. It's written this way so that you can use the cartesian_to_polar coordinate output directly with the canvas context's arc() method, and so that if you're compressing space with the arctangent
+transform you can then do a scale(x, x) transformation to make it fit inside a 2x by 2x box centered at the origin.
 
 Infinity isn't really infinity. Instead, it's a number that corresponds to the reciprocal of the machine epsilon (FP rounding error). This means that "infinite" values can be worked with normally. See
 http://en.wikipedia.org/wiki/Machine_epsilon for ways to compute it.
