@@ -29,8 +29,8 @@ clearInterval on the result to stop the animation.
 
       animator(duration, tween)(f, i = null, start = +new Date) = i = setInterval(Math.min(1, (now - start) / duration) /!tween /!f <then>
                                                                                   clearInterval(i) -then- f(1, true) -when [now - start > duration], where [now = +new Date], given.e, 30),
-      cosine_tween(x) = Math.cos(x * Math.PI) * -0.5 + 0.5,
-      animate         = animator(400, cosine_tween),
+      cosine_tween(x) = Math.cos(x * Math.PI) * -0.5 + 0.5,  animate      = animator(1600, cosine_tween),
+      faster_tween(x) = cosine_tween(x) -re- it * it,        fast_animate = animator(1200, faster_tween),
 
 # Rendering
 
@@ -38,9 +38,15 @@ Most of the time you will probably want to fill in chart elements and stroke a b
 easily be set up by using a 'get the color' callback given a data item and its focused/hovered/etc status. The line width and color are invariant wrt the rendering process, so you can set those up either
 ahead-of-time or per-element using a side-effect in the color_fn in the unlikely event that you do need to change them.
 
-Within these rendering functions, the line style and background color are assumed to be the same thing.
+Within these rendering functions, the line style and background color are assumed to be the same thing. You want this to be the case because otherwise the separation between the elements will appear to
+be different from the background and this looks strange.
 
       renderer(color_fn, context)(path_fn, element)   = path_fn(context) <then> context.fillStyle -eq- color_fn(element) <then> context.fill() <then> context.stroke(),
       chart_renderer(color_fn, context, limit)(chart) = context.fillStyle -eq- context.strokeStyle <then> context.fillRect(v.v[0] - v.dv[0], v.v[1] - v.dv[1], 2*v.dv[0], 2*v.dv[1]) -where [v = chart.view_]
-                                                                                                   <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c)],
+                                                                                                   <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c),
+
+      subchart_renderer(color_fn, context, background, limit)(chart) = context.fillStyle -eq- background
+                                                                       <then> context.beginPath() <then> context.arc(v.v[0], v.v[1], v.dv[0] /-Math.max/ v.dv[1], 0, tau) -where [v = chart.view_]
+                                                                       <then> context.closePath() <then> context.fill()
+                                                                       <then> chart.with_context(context, chart.render(renderer(color_fn, c), limit) -given.c)],
       using [caterwaul.splunge]});

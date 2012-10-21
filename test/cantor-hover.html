@@ -8,18 +8,28 @@
   <script src='../caterwaul-splunge.js'></script>
   <script>
     $(caterwaul(':all')(function () {
-      $('#splunge-test').mousemove(selected_data = chart.find([e.pageX, e.pageY]) -re [it && it.data] -se- console.log(it), render(chart), given.e),
+      $('#splunge-test').mousemove(selected = chart.find([px = e.pageX, py = e.pageY]), render(chart), given.e),
       where [s                = caterwaul.splunge,
              su               = caterwaul.splunge_ui,
-             selected_data    = null,
+             selected         = null,
              count            = 0,
+             px               = 0,
+             py               = 0,
 
-             cantor(x, y, dy) = s.renderable(capture [bound()    = this.bound_    -dcq- s.box([x, y], [s.infinity, dy]),
-                                                      children() = this.children_ -dcq- [s.rectangle(++count, [x, y], [0.08, dy]), cantor(x + 0.08, y, dy / 3), cantor(x + 0.08, y + dy * 2/3, dy / 3)]]),
+             cantor(x, y, dy) = s.renderable(result = capture [bound()    = this.bound_    -dcq- s.box([x, y], [s.infinity, dy]),
+                                                               children() = this.children_ -dcq-
+                                                                 [s.rectangle(++count, [x, y], [0.08, dy]) -se [it.parent_ = result],
+                                                                  cantor(x + 0.08 + (result.child1_ -dcq- Math.random() * 0.02), y + (result.y1_ -dcq- Math.random() * dy * 0.1), dy / 3),
+                                                                  cantor(x + 0.08 + (result.child2_ -dcq- Math.random() * 0.02), y + (result.y2_ -dcq- Math.random() * dy * -0.1) + dy * 2/3, dy / 3)]],
+                                             where [result = null]),
 
-             chart            = s.radial_chart(cantor(0.1, 0, 1), {view: s.centered_in($('#splunge-test')[0])}),
-             render           = su.chart_renderer("su.rgba(_.bound().v[1] / Math.PI, _.data === selected_data ? 1 : 0.5, 1, 0.8)".qf,
-                                                  $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['white'], 20)]}));
+             chart            = s.radial_chart(cantor(0.1, 0.2, 0.6), {slice: [-1, 0] /-s.box/ [3, 1], view: s.centered_in($('#splunge-test')[0])}),
+             subchart()       = selected && selected.parent_ && s.radial_chart(selected.parent_, {slice: selected.bound().inverse(), view: [px, py] /-s.box/ [100, 100]}),
+
+             render()         = su.chart_renderer("su.rgba(0.3, selected && _.data === selected.data ? 1 : 0.5, 1, 0.8)".qf,
+                                                  $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['white'], 4)(chart)
+                                -then- subchart() /se [it && su.subchart_renderer("su.rgba(0.7, 1, 1, 0.7)".qf,
+                                                                                  $('#splunge-test')[0].getContext('2d') -se- it.strokeStyle /eq['rgba(255, 255, 255, 0.2)'], 'rgba(0, 0, 0, 0.2)', 20)(it)]]}));
   </script>
 </head>
 <body style='margin:0;overflow:hidden'>
