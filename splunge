@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # 99aeabc9ec7fe80b1b39f5e53dc7e49e      <- self-modifying Perl magic
-# state:  baebf2bbf1b3ef7f7d41f32051eafe19
-# istate: fa61ecfc007f86625eb74c8caf36db51
+# state:  a8eb5d53de199cb052865297c3abe650
+# istate: 2214311ae147f73733b2c45d40b6c964
 # id:     f9ee872ce8af12e440a819e289f841db
 
 # This is a self-modifying Perl file. I'm sorry you're viewing the source (it's
@@ -1787,8 +1787,8 @@ __
 meta::sdoc('readme', <<'__');
 Splunge charting library.
 Splunge is a charting library designed to render cool-looking interactive visualizations of large or infinite datasets in a way that is reasonably intuitive to work with. See the [Cantor set
-example](http://spencertipping.com/caterwaul-splunge/test/cantor-click.html), for instance. There are some examples in `test/`, but they are written in Caterwaul. This readme covers its usage from
-vanilla Javascript.
+example](http://spencertipping.com/caterwaul-splunge/test/cantor-click.html), for instance. You can also draw multiple charts on the same canvas, as in [this
+example](http://spencertipping.com/caterwaul-splunge/test/cantor-hover.html). There are some examples in `test/`, but they are written in Caterwaul. This readme covers its usage from vanilla Javascript.
 
   Setup.
   If you are using Caterwaul, include the `caterwaul-splunge.js` file. Otherwise, just include `splunge.js` or `splunge.min.js`. In either case you'll access Splunge via the `caterwaul` global, which is

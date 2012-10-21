@@ -1,8 +1,8 @@
 # Splunge charting library
 
 Splunge is a charting library designed to render cool-looking interactive visualizations of large or infinite datasets in a way that is reasonably intuitive to work with. See the [Cantor set
-example](http://spencertipping.com/caterwaul-splunge/test/cantor-click.html), for instance. There are some examples in `test/`, but they are written in Caterwaul. This readme covers its usage from
-vanilla Javascript.
+example](http://spencertipping.com/caterwaul-splunge/test/cantor-click.html), for instance. You can also draw multiple charts on the same canvas, as in [this
+example](http://spencertipping.com/caterwaul-splunge/test/cantor-hover.html). There are some examples in `test/`, but they are written in Caterwaul. This readme covers its usage from vanilla Javascript.
 
 ## Setup
 
